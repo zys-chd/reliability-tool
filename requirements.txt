@@ -1,0 +1,54 @@
+# =============================================================================
+# 可靠性数据分析工具 - 依赖清单
+# =============================================================================
+# 安装方式:
+#   pip install -r requirements.txt
+#
+# 如果不需要保存 PNG/PDF 图片，可以跳过 kaleido:
+#   pip install PySide6 pandas numpy openpyxl plotly
+#
+# Python 版本要求: >= 3.11 (需要 tomllib 标准库)
+# =============================================================================
+
+# ── GUI 框架 ──
+PySide6>=6.5
+# QWebEngine 子模块（通常随 PySide6 一起安装）
+#   Arch Linux: sudo pacman -S qt6-webengine
+#   Windows:     PySide6 自带
+
+# ── 数据处理 ──
+pandas>=2.0
+numpy>=1.24
+openpyxl>=3.1     # 读写 .xlsx 对比文件
+scipy>=1.12       # Weibull 分布拟合
+# ── 绘图 ──
+plotly>=5.18      # CDF/Weibull 交互式图表
+
+# ── 图片导出（可选） ──
+# 用于保存为 PNG/PDF 格式
+# Windows: 直接 pip install kaleido
+# Linux:   需要系统依赖 libEGL
+#   sudo apt install libegl1-mesa  # Debian/Ubuntu
+#   sudo pacman -S libegl           # Arch Linux
+kaleido>=0.2.1
+
+# ── 开发/测试 ──
+pytest>=7.0
+
+# ═══════════════════════════════════════════════════════════════════
+#  Windows 注意事项
+# ═══════════════════════════════════════════════════════════════════
+#
+# 1. PySide6 的 QWebEngine 需要安装 WebView2 运行时:
+#      https://developer.microsoft.com/en-us/microsoft-edge/webview2/
+#    或安装 Microsoft Edge (Chromium 版)
+#
+# 2. kaleido 在 Windows 上需要 Visual C++ 可再发行组件:
+#      https://aka.ms/vs/17/release/vc_redist.x64.exe
+#
+# 3. 如果 CSV 文件包含中文，确保使用 UTF-8 BOM 编码:
+#      pandas 读取时加 encoding='utf-8-sig'
+#
+# 4. 路径长度限制: Windows 默认路径最大 260 字符
+#     如遇问题可启用长路径支持:
+#     gpedit.msc → 计算机配置 → 管理模板 → 系统 → 文件系统 → 启用 Win32 长路径

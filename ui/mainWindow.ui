@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>910</width>
+    <height>692</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QVBoxLayout" name="vlMain">
+    <item>
+     <widget class="QTabWidget" name="tabWidget"/>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>910</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>文件</string>
+    </property>
+    <addaction name="actExit"/>
+   </widget>
+   <widget class="QMenu" name="menuEdit">
+    <property name="title">
+     <string>编辑</string>
+    </property>
+    <widget class="QMenu" name="menu">
+     <property name="title">
+      <string>加载配置</string>
+     </property>
+     <addaction name="actionDefault"/>
+    </widget>
+    <addaction name="actResetAll"/>
+    <addaction name="separator"/>
+    <addaction name="actSaveConfig"/>
+    <addaction name="menu"/>
+    <addaction name="actConfigItems"/>
+   </widget>
+  <widget class="QMenu" name="menuAbout">
+   <property name="title">
+    <string>关于</string>
+   </property>
+   <addaction name="actAbout"/>
+   <addaction name="separator"/>
+   <addaction name="actViewLog"/>
+  </widget>
+  <widget class="QMenu" name="menuSettings">
+   <property name="title">
+    <string>设置</string>
+   </property>
+   <addaction name="actGlobalSetting"/>
+  </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuEdit"/>
+   <addaction name="menuSettings"/>
+   <addaction name="menuAbout"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actExit">
+   <property name="text">
+    <string>退出</string>
+   </property>
+  </action>
+  <action name="actResetAll">
+   <property name="text">
+    <string>重置所有</string>
+   </property>
+  </action>
+  <action name="actSaveConfig">
+   <property name="text">
+    <string>保存为配置</string>
+   </property>
+  </action>
+  <action name="actConfigItems">
+   <property name="text">
+    <string>配置项</string>
+   </property>
+  </action>
+  <action name="actViewLog">
+   <property name="text">
+    <string>查看日志</string>
+   </property>
+  </action>
+  <action name="actionDefault">
+   <property name="text">
+    <string>Default</string>
+   </property>
+  </action>
+  <action name="actAbout">
+   <property name="text">
+    <string>关于可靠性工具</string>
+   </property>
+  </action>
+  <action name="actGlobalSetting">
+   <property name="text">
+    <string>全局设置</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

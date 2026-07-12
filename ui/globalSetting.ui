@@ -1,0 +1,399 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>944</width>
+    <height>677</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="vlMain">
+   <item>
+    <widget class="QScrollArea" name="scrollGlobal">
+     <property name="widgetResizable">
+      <bool>true</bool>
+     </property>
+     <widget class="QWidget" name="scrollGlobalContent">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>924</width>
+        <height>657</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="vlContent">
+       <item>
+        <widget class="QGroupBox" name="gbWindow">
+         <property name="title">
+          <string>窗口设置</string>
+         </property>
+         <layout class="QVBoxLayout" name="vlWindow">
+          <item>
+           <widget class="QFrame" name="frameSize">
+            <property name="frameShape">
+             <enum>QFrame::Shape::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Shadow::Raised</enum>
+            </property>
+            <layout class="QHBoxLayout" name="hlSize">
+             <item>
+              <widget class="QLabel" name="lblWinSize">
+               <property name="text">
+                <string>窗口尺寸</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="spSize">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>561</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QLabel" name="lblHeight">
+               <property name="text">
+                <string>高：</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="spnWinHeight">
+               <property name="suffix">
+                <string> px</string>
+               </property>
+               <property name="minimum">
+                <number>600</number>
+               </property>
+               <property name="maximum">
+                <number>10000</number>
+               </property>
+               <property name="value">
+                <number>692</number>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="lblWidth">
+               <property name="text">
+                <string>宽：</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="spnWinWidth">
+               <property name="suffix">
+                <string> px</string>
+               </property>
+               <property name="minimum">
+                <number>400</number>
+               </property>
+               <property name="maximum">
+                <number>10000</number>
+               </property>
+               <property name="value">
+                <number>910</number>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QFrame" name="framePosition">
+            <property name="frameShape">
+             <enum>QFrame::Shape::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Shadow::Raised</enum>
+            </property>
+            <layout class="QHBoxLayout" name="hlPosition">
+             <item>
+              <widget class="QLabel" name="lblWinPos">
+               <property name="text">
+                <string>窗口启动位置</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="spPosition">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>546</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QComboBox" name="cmbWinPosition">
+               <item>
+                <property name="text">
+                 <string>记忆上次关闭时位置</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>中心</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>左上</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>右上</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>左下</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>右下</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>上方</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>下方</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>左方</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>右方</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QFrame" name="frameFontSize">
+            <property name="frameShape">
+             <enum>QFrame::Shape::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Shadow::Raised</enum>
+            </property>
+            <layout class="QHBoxLayout" name="hlFontSize">
+             <item>
+              <widget class="QLabel" name="lblFontSize">
+               <property name="text">
+                <string>默认字体大小</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="spFontSize">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>546</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="spnFontSize">
+               <property name="suffix">
+                <string> pt</string>
+               </property>
+               <property name="minimum">
+                <number>2</number>
+               </property>
+               <property name="maximum">
+                <number>100</number>
+               </property>
+               <property name="value">
+                <number>12</number>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QFrame" name="frameCnFont">
+            <property name="frameShape">
+             <enum>QFrame::Shape::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Shadow::Raised</enum>
+            </property>
+            <layout class="QHBoxLayout" name="hlCnFont">
+             <item>
+              <widget class="QLabel" name="lblCnFont">
+               <property name="text">
+                <string>默认中文字体</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="spCnFont">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>546</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QComboBox" name="cmbCnFont"/>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QFrame" name="frameEnFont">
+            <property name="frameShape">
+             <enum>QFrame::Shape::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Shadow::Raised</enum>
+            </property>
+            <layout class="QHBoxLayout" name="hlEnFont">
+             <item>
+              <widget class="QLabel" name="lblEnFont">
+               <property name="text">
+                <string>默认西文字体</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="spEnFont">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>546</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QComboBox" name="cmbEnFont"/>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="gbExit">
+         <property name="title">
+          <string>退出设置</string>
+         </property>
+         <layout class="QVBoxLayout" name="vlExit">
+          <item>
+           <widget class="QFrame" name="frameClean">
+            <property name="frameShape">
+             <enum>QFrame::Shape::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Shadow::Raised</enum>
+            </property>
+            <layout class="QHBoxLayout" name="hlClean">
+             <item>
+              <widget class="QLabel" name="lblClean">
+               <property name="text">
+                <string>退出前清理文件</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="spClean">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>546</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QComboBox" name="cmbCleanOnExit">
+               <item>
+                <property name="text">
+                 <string>是</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>否</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

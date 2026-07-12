@@ -1,0 +1,627 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1230</width>
+    <height>800</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="mainLayout">
+   <item>
+    <widget class="QTabWidget" name="twMain">
+     <property name="tabPosition">
+      <enum>QTabWidget::TabPosition::West</enum>
+     </property>
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="tbWeibull">
+      <attribute name="title">
+       <string>weibull分布拟合</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="weibullLayout">
+       <item>
+        <widget class="QSplitter" name="splWeibull">
+         <property name="orientation">
+          <enum>Qt::Orientation::Horizontal</enum>
+         </property>
+         <widget class="QGroupBox" name="gbControl">
+          <property name="title">
+           <string>控制</string>
+          </property>
+          <layout class="QGridLayout" name="controlGrid">
+           <item row="3" column="1">
+            <widget class="QCheckBox" name="chkUnifySlope">
+             <property name="text">
+              <string>启用统一斜率</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0" colspan="2">
+            <widget class="QLabel" name="lblFilePath">
+             <property name="text">
+              <string>待选择文件...</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="0" colspan="3">
+            <widget class="QTabWidget" name="twFitResult">
+             <property name="currentIndex">
+              <number>0</number>
+             </property>
+             <widget class="QWidget" name="tbFitResult">
+              <attribute name="title">
+               <string>拟合结果</string>
+              </attribute>
+              <layout class="QVBoxLayout" name="fitResultInnerLayout">
+               <item>
+                <widget class="QScrollArea" name="saFitResult">
+                 <property name="widgetResizable">
+                  <bool>true</bool>
+                 </property>
+                 <widget class="QWidget" name="saFitResultContent">
+                  <property name="geometry">
+                   <rect>
+                    <x>0</x>
+                    <y>0</y>
+                    <width>806</width>
+                    <height>495</height>
+                   </rect>
+                  </property>
+                 </widget>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+             <widget class="QWidget" name="tbRawData">
+              <attribute name="title">
+               <string>原始数据</string>
+              </attribute>
+              <layout class="QGridLayout" name="rawDataGrid">
+               <item row="0" column="0">
+                <widget class="QPushButton" name="btnRefreshData">
+                 <property name="text">
+                  <string>刷新</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="1">
+                <widget class="QPushButton" name="btnWriteData">
+                 <property name="text">
+                  <string>写入</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="0" colspan="2">
+                <widget class="QTableWidget" name="tblRawData"/>
+               </item>
+              </layout>
+             </widget>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QPushButton" name="btnAddCustomPlot">
+             <property name="text">
+              <string>添加自定义图</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QComboBox" name="cmbSheetSelector"/>
+           </item>
+           <item row="0" column="0">
+            <widget class="QPushButton" name="btnSelectFile">
+             <property name="text">
+              <string>选择数据</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="2">
+            <widget class="QPushButton" name="btnWeibullFit">
+             <property name="text">
+              <string>weibull拟合</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QPushButton" name="btnExportTemplate">
+             <property name="text">
+              <string>导出模板</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="lblSheet">
+             <property name="text">
+              <string>选择sheet：</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QRadioButton" name="rdoTBD">
+             <property name="text">
+              <string>TBD</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="lblDataType">
+             <property name="text">
+              <string>计算数据：</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="2">
+            <widget class="QRadioButton" name="rdoQBD">
+             <property name="text">
+              <string>QBD</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="2">
+            <widget class="QPushButton" name="btnBetaDiagnostic">
+             <property name="text">
+              <string>β诊断</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QPushButton" name="btnSetting">
+             <property name="text">
+              <string>设置</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QGroupBox" name="gbWeibullPlot">
+          <property name="title">
+           <string>结果显示</string>
+          </property>
+          <layout class="QVBoxLayout" name="weibullPlotLayout">
+           <item>
+            <widget class="QWebEngineView" name="wvWeibullPlot">
+             <property name="url">
+              <url>
+               <string>about:blank</string>
+              </url>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tbLifetime">
+      <attribute name="title">
+       <string>寿命计算</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="lifetimeLayout">
+       <item>
+        <widget class="QSplitter" name="splLifetime">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <widget class="QGroupBox" name="gbParamConfig">
+          <property name="title">
+           <string>参数配置</string>
+          </property>
+          <layout class="QGridLayout" name="paramGrid">
+           <item row="0" column="8">
+            <spacer name="horizontalSpacer_4">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item row="1" column="1">
+            <widget class="QDoubleSpinBox" name="editWorkTemp">
+            <property name="decimals">
+             <number>1</number>
+            </property>
+            <property name="minimum">
+             <double>-5000.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>5000.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>25.000000000000000</double>
+            </property>
+           </widget>
+           </item>
+           <item row="0" column="11">
+            <spacer name="horizontalSpacer">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item row="0" column="2">
+            <spacer name="horizontalSpacer_2">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item row="0" column="1">
+            <widget class="QDoubleSpinBox" name="editWorkVoltage">
+            <property name="decimals">
+             <number>1</number>
+            </property>
+            <property name="minimum">
+             <double>-5000.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>5000.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>3.300000000000000</double>
+            </property>
+           </widget>
+           </item>
+           <item row="0" column="9">
+            <widget class="QLabel" name="lblPickMethod">
+             <property name="text">
+              <string>取点方式：</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="12">
+            <widget class="QPushButton" name="btnCalc">
+             <property name="text">
+              <string>计算</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="6">
+            <widget class="QLabel" name="lblTDDBModel">
+             <property name="text">
+              <string>TDDB模型：</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="lblWorkTemp">
+             <property name="text">
+              <string>工作温度/℃：</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="10">
+            <widget class="QComboBox" name="cmbPickMethod">
+             <item>
+              <property name="text">
+               <string>weibull曲线取点</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>原始数据平滑取点</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="0" column="4">
+            <widget class="QDoubleSpinBox" name="editOxideThickness">
+            <property name="decimals">
+             <number>1</number>
+            </property>
+            <property name="minimum">
+             <double>-5000.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>5000.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>5.000000000000000</double>
+            </property>
+           </widget>
+           </item>
+           <item row="0" column="3">
+            <widget class="QLabel" name="lblOxideThickness">
+             <property name="text">
+              <string>栅氧厚度/nm：</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0">
+            <widget class="QLabel" name="lblWorkVoltage">
+             <property name="text">
+              <string>工作电压/V：</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="5">
+            <spacer name="horizontalSpacer_3">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item row="0" column="7">
+            <widget class="QComboBox" name="cmbTDDBModel">
+             <item>
+              <property name="text">
+               <string>E模型</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>1/E模型</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>V模型</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QSplitter" name="splResult">
+          <property name="orientation">
+           <enum>Qt::Orientation::Horizontal</enum>
+          </property>
+          <widget class="QTabWidget" name="twResultView">
+           <property name="currentIndex">
+            <number>0</number>
+           </property>
+           <widget class="QWidget" name="tbResult">
+            <attribute name="title">
+             <string>结果显示</string>
+            </attribute>
+            <layout class="QVBoxLayout" name="resultLayout">
+             <item>
+              <widget class="QGroupBox" name="gbLifeResult">
+               <property name="title">
+                <string>寿命计算</string>
+               </property>
+               <layout class="QGridLayout" name="lifeGrid">
+                <item row="0" column="0">
+                 <widget class="QLabel" name="lblLifeFormula">
+                  <property name="text">
+                   <string>计算公式：</string>
+                  </property>
+                  <property name="scaledContents">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="2">
+                 <widget class="QToolButton" name="btnLifeHelp">
+                  <property name="text">
+                   <string>？</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="3">
+                 <widget class="QPushButton" name="btnPlotLifeFR">
+                  <property name="text">
+                   <string>绘制寿命-失效率曲线</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0" colspan="4">
+                 <widget class="QScrollArea" name="saLifeResult">
+                  <property name="widgetResizable">
+                   <bool>true</bool>
+                  </property>
+                  <widget class="QWidget" name="saLifeResultContent">
+                   <property name="geometry">
+                    <rect>
+                     <x>0</x>
+                     <y>0</y>
+                     <width>833</width>
+                     <height>209</height>
+                    </rect>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout">
+                    <item>
+                     <widget class="QTableView" name="tblLifeResult"/>
+                    </item>
+                    <item>
+                     <spacer name="verticalSpacer">
+                      <property name="orientation">
+                       <enum>Qt::Orientation::Vertical</enum>
+                      </property>
+                      <property name="sizeHint" stdset="0">
+                       <size>
+                        <width>20</width>
+                        <height>40</height>
+                       </size>
+                      </property>
+                     </spacer>
+                    </item>
+                   </layout>
+                  </widget>
+                 </widget>
+                </item>
+                <item row="0" column="1">
+                 <spacer name="horizontalSpacer_5">
+                  <property name="orientation">
+                   <enum>Qt::Orientation::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item>
+              <widget class="QGroupBox" name="gbFailResult">
+               <property name="title">
+                <string>失效率计算</string>
+               </property>
+               <layout class="QGridLayout" name="failGrid">
+                <item row="1" column="0" colspan="4">
+                 <widget class="QScrollArea" name="saFailResult">
+                  <property name="widgetResizable">
+                   <bool>true</bool>
+                  </property>
+                  <widget class="QWidget" name="saFailResultContent">
+                   <property name="geometry">
+                    <rect>
+                     <x>0</x>
+                     <y>0</y>
+                     <width>833</width>
+                     <height>210</height>
+                    </rect>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout_2">
+                    <item>
+                     <widget class="QTableView" name="tblFailResult"/>
+                    </item>
+                    <item>
+                     <spacer name="verticalSpacer_2">
+                      <property name="orientation">
+                       <enum>Qt::Orientation::Vertical</enum>
+                      </property>
+                      <property name="sizeHint" stdset="0">
+                       <size>
+                        <width>20</width>
+                        <height>40</height>
+                       </size>
+                      </property>
+                     </spacer>
+                    </item>
+                   </layout>
+                  </widget>
+                 </widget>
+                </item>
+                <item row="0" column="3">
+                 <widget class="QPushButton" name="btnPlotFailCurve">
+                  <property name="text">
+                   <string>绘制失效率-工作时间曲线</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="0">
+                 <widget class="QLabel" name="lblFailFormula">
+                  <property name="text">
+                   <string>计算公式：</string>
+                  </property>
+                  <property name="scaledContents">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="2">
+                 <widget class="QToolButton" name="btnFailHelp">
+                  <property name="text">
+                   <string>？</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1">
+                 <spacer name="horizontalSpacer_6">
+                  <property name="orientation">
+                   <enum>Qt::Orientation::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+           <widget class="QWidget" name="tbRawParams">
+            <attribute name="title">
+             <string>原始数据查看</string>
+            </attribute>
+            <layout class="QVBoxLayout" name="rawParamsLayout">
+             <item>
+              <widget class="QTableWidget" name="tblRawParams"/>
+             </item>
+            </layout>
+           </widget>
+          </widget>
+          <widget class="QGroupBox" name="gbModelPlot">
+           <property name="title">
+            <string>模型绘图</string>
+           </property>
+           <layout class="QVBoxLayout" name="modelPlotLayout">
+            <item>
+             <widget class="QWebEngineView" name="wvModelPlot">
+              <property name="url">
+               <url>
+                <string>about:blank</string>
+               </url>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QWebEngineView</class>
+   <extends>QWidget</extends>
+   <header location="global">QtWebEngineWidgets/QWebEngineView</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

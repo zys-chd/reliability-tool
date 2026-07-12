@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.spec
+*.egg
+data/T0
+data/TX
+data/archive
+*.bak
+*.zip
+
+# Virtual environment
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+logs/
+*.log
+config/*.toml
+!config/.gitkeep
+images/
+*.html
+*.xlsx
+!FT_template.xlsx
+!TDDB_template.xlsx
+!ui/gen/formula_images/*.png
+
+# Packaging
+packaging/__pycache__/
+
+# Test data
+data/*.xlsx
+data/*.csv
+
+# Generated UI (regenerate from .ui files)
+ui/gen/*_ui.py
+presentation/
