@@ -377,7 +377,7 @@ def build_plots(
         horizontal_spacing=0.1,
     )
 
-    y_label = "CDF" if y_mode == "cdf" else "ln(-ln(1-Median Rank))"
+    y_label = "CDF" if y_mode.upper() == "CDF" else "ln(-ln(1-Median Rank))"
 
     # 每个子图独立图例 — 用子图的 yaxis.domain 精确定位到图区顶部
     legend_positions = {}

@@ -224,14 +224,14 @@ try {
             --clean `
             --noconfirm `
             --name "reliability-tool-v$version" `
-            --onefile `
+            $outputDirArg `
             --windowed `
             --add-data "VERSION;." `
             --add-data "ui/gen/formula_images;ui/gen/formula_images" `
             --add-data "icon.ico;." `
             --add-data "icon.png;." `
             --icon "icon.ico" `
-            --splash "icon.png" `
+            $splashArg `
             --contents-directory "_internal" `
             --hidden-import "scipy" `
             --hidden-import "PySide6.QtWebEngineWidgets" `

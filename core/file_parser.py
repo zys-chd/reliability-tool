@@ -63,14 +63,15 @@ class ParserManager:
         """Auto-detect format, read, and map columns.
 
         Uses FormatDetector to analyze file structure and ColumnMapper
-        to normalize column names.
+        to normalize column names. Passes FormatInfo to parser for
+        unit conversion support.
         """
         from .format_detector import detect_format
         from .column_mapper import ColumnMapper
 
         fmt = detect_format(path)
         parser = self.get_parser(path, fmt)
-        df = parser.read(path)
+        df = parser.read(path, fmt_info=fmt)
 
         mapper = ColumnMapper(fmt.column_map)
         col_map = mapper.auto_detect(list(df.columns))
@@ -157,13 +158,19 @@ class DefaultCSVParser:
                  delimiter: str = ",",
                  part_id_row: int = 0,
                  soft_bin_row: int = 0,
-                 data_start_row: int = -1):
+                 data_start_row: int = -1,
+                 data_col_header_row: int = 0,
+                 skip_row_values: dict | None = None,
+                 stop_at_blank_row: bool = True):
         self.encoding = encoding
         self.skiprows = skiprows if skiprows is not None else [1, 2, 3]
         self.delimiter = delimiter
         self.part_id_row = part_id_row
         self.soft_bin_row = soft_bin_row
         self.data_start_row = data_start_row
+        self.data_col_header_row = data_col_header_row
+        self.skip_row_values = skip_row_values or {}
+        self.stop_at_blank_row = stop_at_blank_row
 
     @property
     def supported_extensions(self) -> list[str]:
@@ -203,9 +210,14 @@ class DefaultCSVParser:
             self.part_id_row = fmt_info.part_id_row
             self.soft_bin_row = fmt_info.soft_bin_row
             self.data_start_row = fmt_info.data_start_row
+            self.data_col_header_row = getattr(fmt_info, 'data_col_header_row', 0)
+            self.skip_row_values = getattr(fmt_info, 'skip_row_values', {})
+            self.stop_at_blank_row = getattr(fmt_info, 'stop_at_blank_row', True)
             # Recalculate skiprows based on data_start_row
-            if self.data_start_row > 0:
-                self.skiprows = list(range(self.data_start_row))
+            # data_start_row is the index of the FIRST DATA row;
+            # skip rows 1..data_start_row-1 to preserve row 0 (header)
+            if self.data_start_row > 1:
+                self.skiprows = list(range(1, self.data_start_row))
 
         # Check if we need header merging (part_id_row differs from main header row)
         # Detect split headers via meta_schema or explicit row differences
@@ -267,13 +279,111 @@ class DefaultCSVParser:
                     delimiter=self.delimiter,
                     skipinitialspace=True,
                 )
+                # Unit conversion (after reading, before returning)
+                self._apply_unit_conversion(df, path, fmt_info, raw_lines)
                 return df
 
         # Fallback: original behavior
-        return pd.read_csv(
+        df = pd.read_csv(
             path, skiprows=self.skiprows,
             encoding=self.encoding, delimiter=self.delimiter,
         )
+        # Data filtering: remove skip rows, stop at blank rows
+        self._filter_dataframe(df)
+        # Unit conversion
+        self._apply_unit_conversion(df, path, fmt_info)
+        return df
+
+    def _filter_dataframe(self, df: 'pd.DataFrame'):
+        """In-place filter: remove skip_row_values rows and stop at blank."""
+        # Remove rows matching skip_row_values (e.g., PART_ID="1" or "END")
+        for col, values in self.skip_row_values.items():
+            if col in df.columns:
+                for val in values:
+                    df.drop(df.index[df[col].astype(str).str.strip() == str(val)],
+                            inplace=True, errors='ignore')
+
+        # Stop at first entirely blank row
+        if self.stop_at_blank_row:
+            blank_mask = df.isna().all(axis=1) | df.eq("").all(axis=1)
+            first_blank = blank_mask.idxmax() if blank_mask.any() else -1
+            if first_blank > 0:
+                df.drop(range(first_blank, len(df)), inplace=True, errors='ignore')
+
+        df.reset_index(drop=True, inplace=True)
+
+    def _apply_unit_conversion(self, df: 'pd.DataFrame', path: str,
+                                fmt_info: 'FormatInfo | None' = None,
+                                raw_lines: list[str] | None = None):
+        """Convert numeric columns to SI units using the unit row.
+
+        Reads the unit row (identified by meta_schema or unit_row in
+        FormatInfo) and applies UnitConverter to each test column.
+        Modifies df in-place.
+        """
+        if fmt_info is None or df is None or df.empty:
+            return
+
+        # Find the unit row index
+        unit_row = -1
+        meta_schema = getattr(fmt_info, 'meta_schema', {}) or {}
+        for row_idx, schema_type in meta_schema.items():
+            if schema_type == "unit":
+                unit_row = row_idx
+                break
+        if unit_row < 0:
+            unit_row = getattr(fmt_info, 'unit_row', -1)
+        if unit_row < 0:
+            return  # No unit information available
+
+        # Read the unit row from the file
+        if raw_lines is None:
+            try:
+                with open(path, 'r', encoding=self.encoding) as f:
+                    raw_lines = f.readlines()
+            except Exception:
+                return
+
+        if unit_row >= len(raw_lines):
+            return
+
+        import csv
+        import io
+        from core.unit_converter import UnitConverter
+
+        reader = csv.reader(
+            io.StringIO(raw_lines[unit_row]),
+            delimiter=self.delimiter,
+        )
+        unit_cells = next(reader, [])
+        # Trim unit_cells to match df columns
+        # The first 2+ cells are PART_ID/SOFT_BIN units (usually empty)
+        col_mapping: list[tuple[str, float]] = []  # (si_unit, multiplier)
+        for i in range(len(df.columns)):
+            if i < len(unit_cells):
+                unit_str = unit_cells[i].strip()
+            else:
+                unit_str = ""
+            si_unit, multiplier = UnitConverter.parse_unit(unit_str)
+            col_mapping.append((si_unit, multiplier))
+
+        # Apply conversion to each test column
+        for i, col in enumerate(df.columns):
+            if col in ("PART_ID", "SOFT_BIN", "group", "filepath", "SITE"):
+                continue
+            if i >= len(col_mapping):
+                continue
+            _, multiplier = col_mapping[i]
+            # Ensure float dtype before any conversion (avoids FutureWarning
+            # with int64 columns being set with float values)
+            if callable(multiplier) or multiplier != 1.0:
+                df[col] = df[col].astype(float)
+            if callable(multiplier):
+                # Non-linear conversion (e.g., °F → °C)
+                _fn = multiplier
+                df[col] = df[col].apply(_fn)
+            elif multiplier != 1.0:
+                df[col] = df[col] * multiplier
 
 
 class DefaultExcelParser:
@@ -306,3 +416,6 @@ def get_parser_manager() -> ParserManager:
 
 def read_file(path: str) -> pd.DataFrame:
     return _default_manager.read(path)
+
+if __name__ == "__main__":
+    print(_default_manager.read("/run/media/zys/7C64A61F64A5DBE0/reliability-tool/data/T0/T0_产线_A copy.csv"))
