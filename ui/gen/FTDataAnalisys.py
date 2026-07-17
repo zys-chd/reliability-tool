@@ -31,6 +31,8 @@ from .FTDataAnalisys_ui import Ui_FTDataAnalysisWidget
 from .FTDataAnalisysConfig import ConfigDialog
 from .config_manager import ConfigManager
 from .config_schemas import FT_ANALYSIS_SCHEMA
+from .logger import TabLoggerAdapter
+from .logger import create_logger
 
 
 FILE_FILTER = (
@@ -157,7 +159,7 @@ class FTDataAnalysisPage(QWidget, Ui_FTDataAnalysisWidget):
 
     def __init__(self, parent=None, logger: logging.Logger | None = None):
         super().__init__(parent)
-        self.logger = logger or logging.getLogger("FTDataAnalysisPage")
+        self.logger = TabLoggerAdapter(logger or create_logger("ft_data"), "ft_data")
         self._config: dict = {}
         self.setupUi(self)
         self._panels: dict[str, _FilePanel] = {}

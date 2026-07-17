@@ -73,6 +73,12 @@
              </item>
              <item>
               <widget class="QSpinBox" name="spnWinHeight">
+               <property name="minimumSize">
+                <size>
+                 <width>120</width>
+                 <height>0</height>
+                </size>
+               </property>
                <property name="suffix">
                 <string> px</string>
                </property>
@@ -96,6 +102,12 @@
              </item>
              <item>
               <widget class="QSpinBox" name="spnWinWidth">
+               <property name="minimumSize">
+                <size>
+                 <width>120</width>
+                 <height>0</height>
+                </size>
+               </property>
                <property name="suffix">
                 <string> px</string>
                </property>
@@ -144,6 +156,12 @@
              </item>
              <item>
               <widget class="QComboBox" name="cmbWinPosition">
+               <property name="minimumSize">
+                <size>
+                 <width>240</width>
+                 <height>0</height>
+                </size>
+               </property>
                <item>
                 <property name="text">
                  <string>记忆上次关闭时位置</string>
@@ -230,6 +248,12 @@
              </item>
              <item>
               <widget class="QSpinBox" name="spnFontSize">
+               <property name="minimumSize">
+                <size>
+                 <width>80</width>
+                 <height>0</height>
+                </size>
+               </property>
                <property name="suffix">
                 <string> pt</string>
                </property>
@@ -277,7 +301,14 @@
               </spacer>
              </item>
              <item>
-              <widget class="QComboBox" name="cmbCnFont"/>
+              <widget class="QComboBox" name="cmbCnFont">
+               <property name="minimumSize">
+                <size>
+                 <width>240</width>
+                 <height>0</height>
+                </size>
+               </property>
+              </widget>
              </item>
             </layout>
            </widget>
@@ -312,7 +343,14 @@
               </spacer>
              </item>
              <item>
-              <widget class="QComboBox" name="cmbEnFont"/>
+              <widget class="QComboBox" name="cmbEnFont">
+               <property name="minimumSize">
+                <size>
+                 <width>240</width>
+                 <height>0</height>
+                </size>
+               </property>
+              </widget>
              </item>
             </layout>
            </widget>
@@ -357,6 +395,12 @@
              </item>
              <item>
               <widget class="QComboBox" name="cmbCleanOnExit">
+               <property name="minimumSize">
+                <size>
+                 <width>50</width>
+                 <height>0</height>
+                </size>
+               </property>
                <item>
                 <property name="text">
                  <string>是</string>

@@ -5,17 +5,20 @@
 """
 
 import logging, sys
+import re
 from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
-    QDialog, QFrame, QHBoxLayout, QLabel, QMainWindow, QMessageBox,
-    QPushButton, QScrollArea, QTextEdit, QVBoxLayout, QWidget,
+    QCheckBox, QComboBox, QDateTimeEdit, QDialog, QFileDialog, QFrame,
+    QGroupBox,
+    QHBoxLayout, QLabel, QLineEdit, QMainWindow, QMessageBox,
+    QPushButton, QScrollArea, QSplitter, QTextEdit, QVBoxLayout, QWidget,
 )
 
 from .mainWindow_ui import Ui_MainWindow
-from .logger import create_logger
+from .logger import create_logger, TabLoggerAdapter
 from .FTDataAnalisys import FTDataAnalysisPage
 from core.webengine_check import is_webengine_available
 from .FTDataAnalisysConfig import ConfigDialog
@@ -36,7 +39,7 @@ class AboutDialog(QDialog):
     def __init__(self, version: str, parent=None):
         super().__init__(parent)
         self.setWindowTitle("关于可靠性工具")
-        self.setFixedSize(520, 420)
+        self.setFixedSize(520, 480)
         self.setModal(True)
 
         # ── 外层布局 — scroll 区域 + 底部关闭按钮 ──
@@ -79,15 +82,13 @@ class AboutDialog(QDialog):
 
         # 功能介绍
         info = QLabel(
-            "本工具专为半导体可靠性工程中的良率测试（FT）和\n"
-            "经时介质击穿（TDDB）数据分析而设计。\n\n"
+            "本工具专为功率模组可靠性数据分析而设计。\n\n"
             "主要功能：\n"
             "  • 多文件 FT 数据导入、自动格式检测与列映射\n"
             "  • 累积分布函数（CDF）与 Weibull 分布图交互绘制\n"
             "  • T0/TX/Shift 多批次对比分析\n"
             "  • TDDB Weibull 拟合、E/1E/V/E-Arrhenius 模型\n"
             "  • 面积缩放（Poisson 模型）与 β 诊断\n"
-            "  • 开尔文测试结构合并与交叉对比\n"
             "  • Excel 报告自动生成"
         )
         info.setWordWrap(True)
@@ -100,8 +101,23 @@ class AboutDialog(QDialog):
         line2.setFrameShadow(QFrame.Shadow.Sunken)
         vbox.addWidget(line2)
 
-        # 版权
-        lbl_copyright = QLabel("Copyright © 2025 可靠性工程团队")
+        # ── 华为菊花 logo ──
+        from PySide6.QtGui import QPixmap
+        logo_path = Path(__file__).resolve().parent.parent.parent / "huawei_logo.png"
+        if logo_path.exists():
+            lbl_logo = QLabel()
+            pixmap = QPixmap(str(logo_path))
+            scaled = pixmap.scaled(64, 64, Qt.AspectRatioMode.KeepAspectRatio,
+                                   Qt.TransformationMode.SmoothTransformation)
+            lbl_logo.setPixmap(scaled)
+            lbl_logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            vbox.addWidget(lbl_logo)
+
+        # 版权 + 联系方式
+        lbl_copyright = QLabel(
+            "Copyright © 2026 Huawei Digital Power Technologies Co., Ltd.\n"
+            "zhangyusong8@huawei.com"
+        )
         lbl_copyright.setAlignment(Qt.AlignmentFlag.AlignCenter)
         lbl_copyright.setStyleSheet("color: #888888;")
         vbox.addWidget(lbl_copyright)
@@ -122,28 +138,84 @@ class AboutDialog(QDialog):
 
 
 class LogViewer(QDialog):
-    """查看日志对话框"""
+    """查看日志对话框 — 支持按 level / 时间 / tab 筛选，彩色显示"""
+
+    LEVEL_COLORS = {
+        "DEBUG": "#888888",
+        "INFO": "#d4d4d4",
+        "WARNING": "#ffcc00",
+        "ERROR": "#ff5555",
+        "CRITICAL": "#ff0000",
+    }
+    TAB_COLORS = [
+        "#569cd6", "#4ec9b0", "#c586c0", "#dcdcaa",
+        "#ce9178", "#6a9955", "#9cdcfe",
+    ]
+
+    # 解析日志行: [时间] LEVEL    name | [Tab] 消息
+    _LINE_RE = re.compile(
+        r'\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]'
+        r'\s+(DEBUG|INFO|WARNING|ERROR|CRITICAL)\s+\S+\s+\|'
+        r'\s+\[([^\]]+)\]\s+(.*)'
+    )
 
     def __init__(self, log_path: Path, parent=None):
         super().__init__(parent)
         self.setWindowTitle("运行日志")
-        self.resize(800, 500)
+        self.resize(950, 650)
         self.setModal(True)
 
+        self._log_path = log_path
+        self._raw_lines: list[str] = []
+        self._parsed: list[dict] = []
+        self._tab_color_map: dict[str, str] = {}
+
         layout = QVBoxLayout(self)
+
+        # ── 筛选栏 ──
+        filter_layout = QHBoxLayout()
+
+        filter_layout.addWidget(QLabel("Level:"))
+        self.cmbLevel = QComboBox()
+        self.cmbLevel.addItems(["全部", "DEBUG 以上", "INFO 以上", "WARNING 以上", "ERROR 以上", "CRITICAL"])
+        self.cmbLevel.currentIndexChanged.connect(self._apply_filters)
+        filter_layout.addWidget(self.cmbLevel)
+
+        filter_layout.addWidget(QLabel("  时间:"))
+        self.dtStart = QDateTimeEdit()
+        self.dtStart.setDisplayFormat("yyyy-MM-dd HH:mm:ss")
+        self.dtStart.setCalendarPopup(True)
+        filter_layout.addWidget(self.dtStart)
+
+        filter_layout.addWidget(QLabel("~"))
+        self.dtEnd = QDateTimeEdit()
+        self.dtEnd.setDisplayFormat("yyyy-MM-dd HH:mm:ss")
+        self.dtEnd.setCalendarPopup(True)
+        filter_layout.addWidget(self.dtEnd)
+
+        filter_layout.addWidget(QLabel("  Tab:"))
+        self.cmbTab = QComboBox()
+        self.cmbTab.addItem("全部")
+        filter_layout.addWidget(self.cmbTab)
+
+        btn_apply = QPushButton("筛选")
+        btn_apply.clicked.connect(self._apply_filters)
+        filter_layout.addWidget(btn_apply)
+
+        layout.addLayout(filter_layout)
+
+        # ── 日志内容 ──
         self.text_edit = QTextEdit()
         self.text_edit.setReadOnly(True)
-
-        # 读取日志文件
-        if log_path.exists():
-            content = log_path.read_text(encoding="utf-8")
-            self.text_edit.setPlainText(content)
-        else:
-            self.text_edit.setPlainText("暂无日志")
-
+        self.text_edit.setStyleSheet("background-color: #1e1e1e; color: #d4d4d4;"
+                                     " font-family: 'Consolas','Courier New',monospace;"
+                                     " font-size: 12px;")
         layout.addWidget(self.text_edit)
 
+        # ── 底部按钮 ──
         btn_layout = QHBoxLayout()
+        self.lblStatus = QLabel()
+        btn_layout.addWidget(self.lblStatus)
         btn_layout.addStretch()
         btn_refresh = QPushButton("刷新")
         btn_refresh.clicked.connect(self._refresh)
@@ -153,10 +225,137 @@ class LogViewer(QDialog):
         btn_layout.addWidget(btn_close)
         layout.addLayout(btn_layout)
 
+        self._refresh()
+
     def _refresh(self):
-        log_path = Path.cwd() / "logs" / "reliability-tool.log"
-        if log_path.exists():
-            self.text_edit.setPlainText(log_path.read_text(encoding="utf-8"))
+        """(重新)加载日志文件并应用筛选。"""
+        if not self._log_path.exists():
+            self.text_edit.setHtml("<p style='color:#888'>暂无日志</p>")
+            return
+
+        content = self._log_path.read_text(encoding="utf-8")
+        self._raw_lines = content.splitlines()
+        self._parse_lines()
+        self._update_tab_combo()
+        self._apply_filters()
+
+    def _parse_lines(self):
+        """将原始行解析为结构化 dict。"""
+        self._parsed = []
+        for line in self._raw_lines:
+            m = self._LINE_RE.match(line)
+            if m:
+                self._parsed.append({
+                    "raw": line,
+                    "timestamp": m.group(1),
+                    "level": m.group(2),
+                    "tab": m.group(3),
+                    "message": m.group(4),
+                })
+
+    def _update_tab_combo(self):
+        """从已有日志中提取 tab 名填入筛选下拉框。"""
+        tabs = set()
+        for p in self._parsed:
+            tabs.add(p["tab"])
+        current = self.cmbTab.currentText()
+        self.cmbTab.blockSignals(True)
+        self.cmbTab.clear()
+        self.cmbTab.addItem("全部")
+        for t in sorted(tabs):
+            self.cmbTab.addItem(t)
+        # 恢复之前选中的 tab
+        idx = self.cmbTab.findText(current)
+        if idx >= 0:
+            self.cmbTab.setCurrentIndex(idx)
+        self.cmbTab.blockSignals(False)
+
+        # 自动设置时间范围
+        if self._parsed:
+            # Find min/max timestamps from the first/last valid lines
+            self.dtStart.setDateTime(
+                self._parse_dt(self._parsed[0]["timestamp"])
+            )
+            self.dtEnd.setDateTime(
+                self._parse_dt(self._parsed[-1]["timestamp"])
+            )
+
+    @staticmethod
+    def _parse_dt(ts: str):
+        from datetime import datetime
+        try:
+            return datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            from PySide6.QtCore import QDateTime
+            return QDateTime.currentDateTime()
+
+    def _get_tab_color(self, tab: str) -> str:
+        """为每个 tab 分配固定颜色。"""
+        if tab not in self._tab_color_map:
+            idx = len(self._tab_color_map) % len(self.TAB_COLORS)
+            self._tab_color_map[tab] = self.TAB_COLORS[idx]
+        return self._tab_color_map[tab]
+
+    def _apply_filters(self):
+        """按当前筛选条件重新渲染日志。"""
+        level_text = self.cmbLevel.currentText()
+        tab_filter = self.cmbTab.currentText()
+        dt_start = self.dtStart.dateTime().toPython()
+        dt_end = self.dtEnd.dateTime().toPython()
+
+        # Level filter
+        min_level = {
+            "全部": 0,
+            "DEBUG 以上": logging.DEBUG,
+            "INFO 以上": logging.INFO,
+            "WARNING 以上": logging.WARNING,
+            "ERROR 以上": logging.ERROR,
+            "CRITICAL": logging.CRITICAL,
+        }.get(level_text, 0)
+
+        level_map = {"DEBUG": 10, "INFO": 20, "WARNING": 30, "ERROR": 40, "CRITICAL": 50}
+        from datetime import datetime
+
+        html_parts = [
+            "<html><body style='font-family:Consolas,Courier New,monospace; font-size:12px; background:#1e1e1e;'>"
+        ]
+        matched = 0
+
+        for p in self._parsed:
+            # Level filter
+            lvl_num = level_map.get(p["level"], 0)
+            if lvl_num < min_level:
+                continue
+
+            # Tab filter
+            if tab_filter != "全部" and p["tab"] != tab_filter:
+                continue
+
+            # Time filter
+            try:
+                ts = datetime.strptime(p["timestamp"], "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                ts = None
+            if ts:
+                if dt_start and ts < dt_start:
+                    continue
+                if dt_end and ts > dt_end:
+                    continue
+
+            # Render line with colors
+            level_color = self.LEVEL_COLORS.get(p["level"], "#d4d4d4")
+            tab_color = self._get_tab_color(p["tab"])
+            html_parts.append(
+                f'<span style="color:#569cd6">{p["timestamp"]}</span>'
+                f' <span style="color:{level_color};font-weight:bold">{p["level"]:8s}</span>'
+                f' <span style="color:{tab_color}">[{p["tab"]}]</span>'
+                f' <span style="color:#d4d4d4">{p["message"]}</span><br>'
+            )
+            matched += 1
+
+        html_parts.append("</body></html>")
+        self.text_edit.setHtml("".join(html_parts))
+        self.lblStatus.setText(f"显示 {matched}/{len(self._parsed)} 条")
 
 
 class UTPage(QWidget, Ui_UTPage):
@@ -164,7 +363,7 @@ class UTPage(QWidget, Ui_UTPage):
     def __init__(self, parent=None, logger: logging.Logger | None = None):
         super().__init__(parent)
         self.setupUi(self)
-        self.logger = logger or create_logger("ut_tool")
+        self.logger = TabLoggerAdapter(logger or create_logger("ut_tool"), "ut_tool")
 
 
 class BurnInPage(QWidget, Ui_BurnInPage):
@@ -172,7 +371,7 @@ class BurnInPage(QWidget, Ui_BurnInPage):
     def __init__(self, parent=None, logger: logging.Logger | None = None):
         super().__init__(parent)
         self.setupUi(self)
-        self.logger = logger or create_logger("burnin")
+        self.logger = TabLoggerAdapter(logger or create_logger("burnin"), "burnin")
 
 
 class LifeModelPage(QWidget, Ui_LifeModelPage):
@@ -180,7 +379,7 @@ class LifeModelPage(QWidget, Ui_LifeModelPage):
     def __init__(self, parent=None, logger: logging.Logger | None = None):
         super().__init__(parent)
         self.setupUi(self)
-        self.logger = logger or create_logger("life_model")
+        self.logger = TabLoggerAdapter(logger or create_logger("life_model"), "life_model")
 
 
 class ShiftPredPage(QWidget, Ui_ShiftPredPage):
@@ -188,7 +387,7 @@ class ShiftPredPage(QWidget, Ui_ShiftPredPage):
     def __init__(self, parent=None, logger: logging.Logger | None = None):
         super().__init__(parent)
         self.setupUi(self)
-        self.logger = logger or create_logger("shift_pred")
+        self.logger = TabLoggerAdapter(logger or create_logger("shift_pred"), "shift_pred")
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -215,7 +414,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setWindowTitle("可靠性工具" + " - V" + version)
 
         # ── 创建 logger ──
-        self.logger = create_logger("reliability-tool")
+        self.logger = TabLoggerAdapter(create_logger("reliability-tool"), "reliability-tool")
         self.logger.info("程序启动")
         self.logger.info(f"日志文件：{Path.cwd() / 'logs' / 'reliability-tool.log'}")
 
@@ -300,7 +499,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.resize(w, h)
 
     def _view_log(self):
-        log_path = Path.cwd() / "logs" / "reliability-tool.log"
+        from .logger import LOG_DIR
+        log_path = LOG_DIR / "reliability-tool.log"
         dlg = LogViewer(log_path, self)
         dlg.exec()
 

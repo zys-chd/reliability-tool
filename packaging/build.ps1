@@ -1,14 +1,14 @@
 <#
 .SYNOPSIS
-    ¿É¿¿ĞÔ¹¤¾ß Windows Ò»¼ü´ò°ü½Å±¾
+    ï¿½É¿ï¿½ï¿½Ô¹ï¿½ï¿½ï¿½ Windows Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Å±ï¿½
 .DESCRIPTION
-    ´´½¨ĞéÄâ»·¾³ ¡ú °²×°ÒÀÀµ ¡ú Ê¹ÓÃ PyInstaller ´ò°üÎª¶ÀÁ¢ exe¡£
-    Ö»´ò°ü±ØÒªÄ£¿é£¬ÅÅ³ı²âÊÔ/ÎÄµµ/¿ª·¢¹¤¾ßµÈÎŞÓÃÒÀÀµ¡£
+    ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½â»·ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½×°ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ Ê¹ï¿½ï¿½ PyInstaller ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½ exeï¿½ï¿½
+    Ö»ï¿½ï¿½ï¿½ï¿½ï¿½ÒªÄ£ï¿½é£¬ï¿½Å³ï¿½ï¿½ï¿½ï¿½ï¿½/ï¿½Äµï¿½/ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ßµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
-    ÓÃ·¨£º
-        .\packaging\build.ps1                 # Ä¬ÈÏ´ò°ü£¨Release£©
-        .\packaging\build.ps1 -Debug           # µ÷ÊÔÄ£Ê½£¨±£Áô¿ØÖÆÌ¨´°¿Ú£©
-        .\packaging\build.ps1 -NoVenv          # Ìø¹ı venv ´´½¨£¬Ê¹ÓÃµ±Ç°»·¾³
+    ï¿½Ã·ï¿½ï¿½ï¿½
+        .\packaging\build.ps1                 # Ä¬ï¿½Ï´ï¿½ï¿½ï¿½ï¿½Releaseï¿½ï¿½
+        .\packaging\build.ps1 -Debug           # ï¿½ï¿½ï¿½ï¿½Ä£Ê½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¨ï¿½ï¿½ï¿½Ú£ï¿½
+        .\packaging\build.ps1 -NoVenv          # ï¿½ï¿½ï¿½ï¿½ venv ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¹ï¿½Ãµï¿½Ç°ï¿½ï¿½ï¿½ï¿½
 #>
 
 param(
@@ -23,79 +23,79 @@ $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $ProjectRoot = Split-Path -Parent $ScriptDir
 
-Write-Host "¨X¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨[" -ForegroundColor Cyan
-Write-Host "¨U   ¿É¿¿ĞÔ¹¤¾ß  Windows ´ò°ü½Å±¾           ¨U" -ForegroundColor Cyan
-Write-Host "¨^¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨a" -ForegroundColor Cyan
+Write-Host "ï¿½Xï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½[" -ForegroundColor Cyan
+Write-Host "ï¿½U   ï¿½É¿ï¿½ï¿½Ô¹ï¿½ï¿½ï¿½  Windows ï¿½ï¿½ï¿½ï¿½Å±ï¿½           ï¿½U" -ForegroundColor Cyan
+Write-Host "ï¿½^ï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½a" -ForegroundColor Cyan
 Write-Host ""
 
-# ©¤©¤©¤ 1. ¼ì²é Python ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+# ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 1. ï¿½ï¿½ï¿½ Python ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 $python = Get-Command "python" -ErrorAction SilentlyContinue
 if (-not $python) {
     $python = Get-Command "python3" -ErrorAction SilentlyContinue
 }
 if (-not $python) {
-    Write-Host "[´íÎó] Î´ÕÒµ½ Python£¬Çë°²×° Python 3.11+£¨½¨Òé Python 3.12£©" -ForegroundColor Red
-    Write-Host "       ÏÂÔØµØÖ·: https://www.python.org/downloads/" -ForegroundColor Yellow
+    Write-Host "[ï¿½ï¿½ï¿½ï¿½] Î´ï¿½Òµï¿½ Pythonï¿½ï¿½ï¿½ë°²×° Python 3.11+ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Python 3.12ï¿½ï¿½" -ForegroundColor Red
+    Write-Host "       ï¿½ï¿½ï¿½Øµï¿½Ö·: https://www.python.org/downloads/" -ForegroundColor Yellow
     exit 1
 }
 $pyVersion = & $python.Source -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}')"
 Write-Host "[?] Python: $pyVersion ($($python.Source))" -ForegroundColor Green
 
-# ©¤©¤©¤ 2. ĞéÄâ»·¾³ ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+# ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 2. ï¿½ï¿½ï¿½â»·ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 $venvPath = Join-Path $ScriptDir "venv"
 $pip = $null
 
 if (-not $NoVenv) {
     if (-not (Test-Path $venvPath)) {
-        Write-Host "[...] ´´½¨ĞéÄâ»·¾³: $venvPath" -ForegroundColor Yellow
+        Write-Host "[...] ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½â»·ï¿½ï¿½: $venvPath" -ForegroundColor Yellow
         & $python.Source -m venv $venvPath
         if ($LASTEXITCODE -ne 0) {
-            Write-Host "[´íÎó] venv ´´½¨Ê§°Ü" -ForegroundColor Red
+            Write-Host "[ï¿½ï¿½ï¿½ï¿½] venv ï¿½ï¿½ï¿½ï¿½Ê§ï¿½ï¿½" -ForegroundColor Red
             exit 1
         }
     } else {
-        Write-Host "[?] Ê¹ÓÃÒÑÓĞĞéÄâ»·¾³" -ForegroundColor Green
+        Write-Host "[?] Ê¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½â»·ï¿½ï¿½" -ForegroundColor Green
     }
 
     $pip = Get-Command (Join-Path $venvPath "Scripts\pip.exe") -ErrorAction SilentlyContinue
     $pythonVenv = Get-Command (Join-Path $venvPath "Scripts\python.exe") -ErrorAction SilentlyContinue
     if (-not $pip -or -not $pythonVenv) {
-        Write-Host "[´íÎó] ĞéÄâ»·¾³ÖĞÎ´ÕÒµ½ pip/python" -ForegroundColor Red
+        Write-Host "[ï¿½ï¿½ï¿½ï¿½] ï¿½ï¿½ï¿½â»·ï¿½ï¿½ï¿½ï¿½Î´ï¿½Òµï¿½ pip/python" -ForegroundColor Red
         exit 1
     }
-    Write-Host "[?] ĞéÄâ»·¾³ Python: $($pythonVenv.Source)" -ForegroundColor Green
+    Write-Host "[?] ï¿½ï¿½ï¿½â»·ï¿½ï¿½ Python: $($pythonVenv.Source)" -ForegroundColor Green
 } else {
     $pip = Get-Command "pip" -ErrorAction SilentlyContinue
     $pythonVenv = $python
     if (-not $pip) {
-        Write-Host "[´íÎó] Î´ÕÒµ½ pip" -ForegroundColor Red
+        Write-Host "[ï¿½ï¿½ï¿½ï¿½] Î´ï¿½Òµï¿½ pip" -ForegroundColor Red
         exit 1
     }
-    Write-Host "[!] Ìø¹ı venv£¬Ê¹ÓÃµ±Ç°»·¾³" -ForegroundColor Yellow
+    Write-Host "[!] ï¿½ï¿½ï¿½ï¿½ venvï¿½ï¿½Ê¹ï¿½Ãµï¿½Ç°ï¿½ï¿½ï¿½ï¿½" -ForegroundColor Yellow
 }
 
-# ©¤©¤©¤ 3. °²×°ÒÀÀµ ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+# ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 3. ï¿½ï¿½×°ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 Write-Host ""
-Write-Host "©¤©¤ °²×°ÔËĞĞÊ±ÒÀÀµ ©¤©¤" -ForegroundColor Cyan
+Write-Host "ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½×°ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½" -ForegroundColor Cyan
 $reqFile = Join-Path $ProjectRoot "requirements.txt"
 & $pip.Source install -r $reqFile
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "[¾¯¸æ] ²¿·ÖÒÀÀµ°²×°Ê§°Ü£¬¼ÌĞø³¢ÊÔ..." -ForegroundColor Yellow
+    Write-Host "[ï¿½ï¿½ï¿½ï¿½] ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×°Ê§ï¿½Ü£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½..." -ForegroundColor Yellow
 }
 
-Write-Host "©¤©¤ °²×°´ò°ü¹¤¾ß ©¤©¤" -ForegroundColor Cyan
+Write-Host "ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½×°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½" -ForegroundColor Cyan
 & $pip.Source install pyinstaller
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "[´íÎó] PyInstaller °²×°Ê§°Ü" -ForegroundColor Red
+    Write-Host "[ï¿½ï¿½ï¿½ï¿½] PyInstaller ï¿½ï¿½×°Ê§ï¿½ï¿½" -ForegroundColor Red
     exit 1
 }
-Write-Host "[?] ÒÀÀµ°²×°Íê³É" -ForegroundColor Green
+Write-Host "[?] ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×°ï¿½ï¿½ï¿½" -ForegroundColor Green
 
-# ©¤©¤©¤ 4. ´ò°ü ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+# ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 4. ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 Write-Host ""
-Write-Host "©¤©¤ ¿ªÊ¼´ò°ü ©¤©¤" -ForegroundColor Cyan
+Write-Host "ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½" -ForegroundColor Cyan
 
-# ¹¹½¨¶îÍâÅÅ³ıÁĞ±í£¨ÔÚ spec »ù´¡ÉÏÔÙ²¹³ä£©
+# ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Å³ï¿½ï¿½Ğ±ï¿½ï¿½ï¿½ï¿½ï¿½ spec ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù²ï¿½ï¿½ä£©
 $excludes = @(
     # "tkinter",
     # "matplotlib.tests",
@@ -180,7 +180,7 @@ $excludes = @(
     # "scipy.fftpack"
 )
 
-# ´Ó VERSION ÎÄ¼ş¶ÁÈ¡°æ±¾ÓÃÓÚÊä³öÄ¿Â¼ÃüÃû
+# ï¿½ï¿½ VERSION ï¿½Ä¼ï¿½ï¿½ï¿½È¡ï¿½æ±¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¿Â¼ï¿½ï¿½ï¿½ï¿½
 $versionFile = Join-Path $ProjectRoot "VERSION"
 $version = "unknown"
 if (Test-Path $versionFile) {
@@ -189,34 +189,38 @@ if (Test-Path $versionFile) {
 
 $outputDir = Join-Path $ProjectRoot "dist"
 if (Test-Path $outputDir) {
-    Write-Host "[...] ÇåÀí¾ÉµÄ dist Ä¿Â¼..." -ForegroundColor Yellow
+    Write-Host "[...] ï¿½ï¿½ï¿½ï¿½ï¿½Éµï¿½ dist Ä¿Â¼..." -ForegroundColor Yellow
     Remove-Item -Recurse -Force $outputDir -ErrorAction SilentlyContinue
 }
 
-# ÇĞ»»µ½ÏîÄ¿¸ùÄ¿Â¼Ö´ĞĞ pyinstaller
+# ï¿½Ğ»ï¿½ï¿½ï¿½ï¿½ï¿½Ä¿ï¿½ï¿½Ä¿Â¼Ö´ï¿½ï¿½ pyinstaller
 Push-Location $ProjectRoot
 try {
-    # Éú³É spec ÖĞÊ¹ÓÃµÄÅÅ³ı²ÎÊı
+    # ï¿½ï¿½ï¿½ï¿½ spec ï¿½ï¿½Ê¹ï¿½Ãµï¿½ï¿½Å³ï¿½ï¿½ï¿½ï¿½ï¿½
     $excludeArgs = $excludes | ForEach-Object { "--exclude-module", $_ }
     $splashArg = if ($NoSplash) { "" } else { "--splash icon.png" }
     $outputDirArg = if ($OneDir) { " --onedir " } else { " --onefile " }
 
     if ($Debug) {
-        Write-Host "[!] µ÷ÊÔÄ£Ê½£ºÏÔÊ¾¿ØÖÆÌ¨´°¿Ú£¨·½±ã²é¿´ print/log£©" -ForegroundColor Yellow
+        Write-Host "[!] è°ƒè¯•æ¨¡å¼ï¼Œæ˜¾ç¤ºæ§åˆ¶å°çª—å£ï¼Œæ–¹ä¾¿æŸ¥çœ‹ print/logã€‚" -ForegroundColor Yellow
         & $pythonVenv.Source -m PyInstaller `
             --clean `
             --noconfirm `
             --name "reliability-tool-v$version" `
             $outputDirArg `
             --add-data "VERSION;." `
+            --add-data "config;config" `
             --add-data "ui/gen/formula_images;ui/gen/formula_images" `
+            --add-data "TDDB_template.xlsx;." `
+            --add-data "huawei_logo.png;." `
+            --add-data "icon.png;." `
             --icon "" `
             --contents-directory "_internal" `
             $excludeArgs `
             "app.py"
 
         if ($LASTEXITCODE -ne 0) {
-            Write-Host "[´íÎó] PyInstaller ´ò°üÊ§°Ü" -ForegroundColor Red
+            Write-Host "[ï¿½ï¿½ï¿½ï¿½] PyInstaller ï¿½ï¿½ï¿½Ê§ï¿½ï¿½" -ForegroundColor Red
             exit 1
         }
     } else {
@@ -227,7 +231,10 @@ try {
             $outputDirArg `
             --windowed `
             --add-data "VERSION;." `
+            --add-data "config;config" `
             --add-data "ui/gen/formula_images;ui/gen/formula_images" `
+            --add-data "TDDB_template.xlsx;." `
+            --add-data "huawei_logo.png;." `
             --add-data "icon.ico;." `
             --add-data "icon.png;." `
             --icon "icon.ico" `
@@ -278,7 +285,7 @@ try {
             "app.py"
 
         if ($LASTEXITCODE -ne 0) {
-            Write-Host "[´íÎó] PyInstaller ´ò°üÊ§°Ü" -ForegroundColor Red
+            Write-Host "[ï¿½ï¿½ï¿½ï¿½] PyInstaller ï¿½ï¿½ï¿½Ê§ï¿½ï¿½" -ForegroundColor Red
             exit 1
         }
     }
@@ -287,7 +294,7 @@ finally {
     Pop-Location
 }
 
-# ©¤©¤©¤ 5. È·±£ VERSION ÎÄ¼şÔÚ dist ÖĞ ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+# ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 5. È·ï¿½ï¿½ VERSION ï¿½Ä¼ï¿½ï¿½ï¿½ dist ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 $distExeDir = Join-Path $ProjectRoot "dist/reliability-tool-v$version"
 if (Test-Path $distExeDir) {
     # copy VERSION if not already bundled
@@ -295,30 +302,30 @@ if (Test-Path $distExeDir) {
         Copy-Item $versionFile (Join-Path $distExeDir "_internal\VERSION")
     }
 
-    # ©¤©¤©¤ 6. ÇåÀíÎŞÓÃÎÄ¼ş ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+    # ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 6. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     Write-Host ""
-    Write-Host "©¤©¤ ÇåÀí´ò°ü²úÎïÖĞµÄÎŞÓÃÎÄ¼ş ©¤©¤" -ForegroundColor Cyan
+    Write-Host "ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ğµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ ï¿½ï¿½ï¿½ï¿½" -ForegroundColor Cyan
 
-    # É¾³ı __pycache__
+    # É¾ï¿½ï¿½ __pycache__
     Get-ChildItem -Recurse -Directory -Path $distExeDir -Filter "__pycache__" | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 
-    # É¾³ı .pyc ÎÄ¼ş
+    # É¾ï¿½ï¿½ .pyc ï¿½Ä¼ï¿½
     Get-ChildItem -Recurse -File -Path $distExeDir -Filter "*.pyc" | Remove-Item -Force -ErrorAction SilentlyContinue
 
-    # É¾³ı pdb ·ûºÅÎÄ¼ş
+    # É¾ï¿½ï¿½ pdb ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½
     Get-ChildItem -Recurse -File -Path "$distExeDir\_internal" -Filter "*.pdb" | Remove-Item -Force -ErrorAction SilentlyContinue
 
-    # É¾³ı .lib ÎÄ¼ş£¨¾²Ì¬¿â£¬ÔËĞĞÊ±²»ĞèÒª£©
+    # É¾ï¿½ï¿½ .lib ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½Ì¬ï¿½â£¬ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½
     Get-ChildItem -Recurse -File -Path "$distExeDir\_internal" -Filter "*.lib" | Remove-Item -Force -ErrorAction SilentlyContinue
 
-    Write-Host "[?] ÇåÀíÍê³É" -ForegroundColor Green
+    Write-Host "[?] ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½" -ForegroundColor Green
 }
 
-# ©¤©¤©¤ 7. ½á¹û»ã×Ü ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+# ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 7. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 Write-Host ""
-Write-Host "¨X¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨[" -ForegroundColor Cyan
-Write-Host "¨U              ´ò°üÍê³É£¡                    ¨U" -ForegroundColor Cyan
-Write-Host "¨^¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨a" -ForegroundColor Cyan
+Write-Host "ï¿½Xï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½[" -ForegroundColor Cyan
+Write-Host "ï¿½U              ï¿½ï¿½ï¿½ï¿½ï¿½É£ï¿½                    ï¿½U" -ForegroundColor Cyan
+Write-Host "ï¿½^ï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½Tï¿½a" -ForegroundColor Cyan
 Write-Host ""
 
 if (Test-Path $distExeDir) {
@@ -326,16 +333,16 @@ if (Test-Path $distExeDir) {
     if (Test-Path $exeFile) {
         $size = (Get-Item $exeFile).Length / 1MB
         $totalSize = (Get-ChildItem -Recurse $distExeDir | Measure-Object -Property Length -Sum).Sum / 1MB
-        Write-Host "  Êä³öÄ¿Â¼: $distExeDir" -ForegroundColor Green
-        Write-Host "  Ö÷³ÌĞò:   reliability-tool-v$version.exe" -ForegroundColor Green
-        Write-Host "  Ö÷³ÌĞò´óĞ¡: {0:N1} MB" -f $size -ForegroundColor Green
-        Write-Host "  ×Ü´óĞ¡:   {0:N1} MB" -f $totalSize -ForegroundColor Green
+        Write-Host "  ï¿½ï¿½ï¿½Ä¿Â¼: $distExeDir" -ForegroundColor Green
+        Write-Host "  ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½:   reliability-tool-v$version.exe" -ForegroundColor Green
+        Write-Host "  ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ğ¡: {0:N1} MB" -f $size -ForegroundColor Green
+        Write-Host "  ï¿½Ü´ï¿½Ğ¡:   {0:N1} MB" -f $totalSize -ForegroundColor Green
         Write-Host ""
-        Write-Host "  ÌáÊ¾: ·Ö·¢Ê±¸´ÖÆÕû¸ö reliability-tool-v$version ÎÄ¼ş¼Ğ¼´¿É" -ForegroundColor Yellow
-        Write-Host "       ÓÃ»§µçÄÔÉÏÎŞĞè°²×° Python »ò Qt" -ForegroundColor Yellow
+        Write-Host "  ï¿½ï¿½Ê¾: ï¿½Ö·ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ reliability-tool-v$version ï¿½Ä¼ï¿½ï¿½Ğ¼ï¿½ï¿½ï¿½" -ForegroundColor Yellow
+        Write-Host "       ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½è°²×° Python ï¿½ï¿½ Qt" -ForegroundColor Yellow
     } else {
-        Write-Host "[¾¯¸æ] Î´ÕÒµ½ exe ÎÄ¼ş£¬Çë¼ì²é dist Ä¿Â¼" -ForegroundColor Yellow
+        Write-Host "[ï¿½ï¿½ï¿½ï¿½] Î´ï¿½Òµï¿½ exe ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ dist Ä¿Â¼" -ForegroundColor Yellow
     }
 } else {
-    Write-Host "[¾¯¸æ] dist Ä¿Â¼²»´æÔÚ£¬´ò°ü¿ÉÄÜ³ö´í" -ForegroundColor Yellow
+    Write-Host "[ï¿½ï¿½ï¿½ï¿½] dist Ä¿Â¼ï¿½ï¿½ï¿½ï¿½ï¿½Ú£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ü³ï¿½ï¿½ï¿½" -ForegroundColor Yellow
 }

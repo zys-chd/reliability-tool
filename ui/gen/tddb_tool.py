@@ -19,7 +19,7 @@ from PySide6.QtWebEngineCore import QWebEngineSettings
 
 from .TDDBTool_ui import Ui_Form
 from .TDDBSetting_ui import Ui_Form as Ui_Settings
-from .logger import create_logger
+from .logger import create_logger, TabLoggerAdapter
 from .config_manager import ConfigManager
 from .config_schemas import TDDB_SCHEMA
 from core.tddb.weibull_fitter import fit_weibull, fit_unified_slope, weibull_plot_data
@@ -170,7 +170,7 @@ class TDDBPage(QWidget, Ui_Form):
     def __init__(self, parent=None, logger: logging.Logger | None = None):
         super().__init__(parent)
         self.setupUi(self)
-        self.logger = logger or create_logger("tddb_tool")
+        self.logger = TabLoggerAdapter(logger or create_logger("tddb_tool"), "tddb")
         self._data: pd.DataFrame | None = None
         self._fit_results_tbd: dict = {}  # TBD 拟合结果
         self._fit_results_qbd: dict = {}  # QBD 拟合结果
