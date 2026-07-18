@@ -16,10 +16,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.path_utils import check_path_length
-
-# ParserManager with auto format detection
-from core.file_parser import ParserManager
-_parser_manager = ParserManager()
+from core.FT_file_parser import FTData
 
 # QWebEngine is optional — if unavailable we fall back to system browser
 try:
@@ -345,18 +342,18 @@ class FTDataAnalysisPage(QWidget, Ui_FTDataAnalysisWidget):
 
     def _get_test_columns(self) -> tuple[list[str], list[str]]:
         """从 T0/TX 文件获取测试列名（自动格式检测 + 列映射）"""
-        skip = {"PART_ID", "SOFT_BIN", "group", "filepath"}
         t0_cols, tx_cols = set(), set()
+        cfg_path = Path(__file__).parent.parent.parent / "config" / "ft_data_config.toml"
         for cb in self._panels["T0"]._files.values():
             try:
-                df = _parser_manager.detect_and_read(cb.toolTip())
-                t0_cols |= {c for c in df.columns if c not in skip}
+                ft = FTData(cb.toolTip(), str(cfg_path))
+                t0_cols |= {c for c in ft.test_columns}
             except Exception:
                 pass
         for cb in self._panels["TX"]._files.values():
             try:
-                df = _parser_manager.detect_and_read(cb.toolTip())
-                tx_cols |= {c for c in df.columns if c not in skip}
+                ft = FTData(cb.toolTip(), str(cfg_path))
+                tx_cols |= {c for c in ft.test_columns}
             except Exception:
                 pass
         return sorted(t0_cols), sorted(tx_cols)
@@ -484,6 +481,7 @@ class FTDataAnalysisPage(QWidget, Ui_FTDataAnalysisWidget):
         # ── 在主线程预扫描冲突 ──
         from core.data_merge import merge_t0_tx as run_merge
         from ui.gen.conflict_dialog import ConflictDialog
+        cfg_path = str(Path(__file__).parent.parent.parent / "config" / "ft_data_config.toml")
 
         chosen_indices: list[int | None] = []
 
@@ -581,6 +579,7 @@ class FTDataAnalysisPage(QWidget, Ui_FTDataAnalysisWidget):
                 progress=dummy_progress,
                 sn_map=sn_map,
                 group_type=group_type,
+                config_path=cfg_path,
             )
         except Exception as e:
             self.logger.warning(f"预扫描冲突失败: {e}")
@@ -600,6 +599,7 @@ class FTDataAnalysisPage(QWidget, Ui_FTDataAnalysisWidget):
                     progress=p,
                     sn_map=sn_map,
                     group_type=group_type,
+                    config_path=cfg_path,
                 )
             )
             if result is None or result.empty:

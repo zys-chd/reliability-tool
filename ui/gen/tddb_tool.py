@@ -24,7 +24,7 @@ from .config_manager import ConfigManager
 from .config_schemas import TDDB_SCHEMA
 from core.tddb.weibull_fitter import fit_weibull, fit_unified_slope, weibull_plot_data
 from core.tddb.models import (
-    fit_e_model, fit_1e_model, fit_v_model, fit_e_arrhenius,
+    fit_e_model, fit_1e_model, fit_v_model, fit_sqrt_e_model, fit_e_arrhenius,
     predict_lifetime, predict_failure_rate,
 )
 from core.tddb.area_scaling import scale_eta
@@ -45,6 +45,7 @@ _FORMULA_MODEL_MAP = {
     "E模型": "e_model",
     "1/E模型": "1e_model",
     "V模型": "v_model",
+    "√E模型": "sqrt_e_model",
 }
 
 
@@ -182,6 +183,7 @@ class TDDBPage(QWidget, Ui_Form):
         self._last_fr_results: list[dict] = []
         self._last_curve_data: dict = {}  # {grp: {eta, beta}}
         self._last_model_params: dict = {}  # {grp: {gamma, g, beta_v, ea}}
+        self._last_etas: dict = {}  # {key: 实际 η（平滑或 Weibull）}
         self._fitting_in_progress = False  # reentrant guard
         self._initialized = False  # 初始化完成后设为 True
 
@@ -234,6 +236,10 @@ class TDDBPage(QWidget, Ui_Form):
         self.chkUnifySlope.stateChanged.connect(self._on_slope_changed)
         self.btnCalc.clicked.connect(self._on_calc)
         self.cmbTDDBModel.currentIndexChanged.connect(self._update_formula_display)
+        self.cmbTDDBModel.currentIndexChanged.connect(
+            lambda: self._on_calc() if self._fit_results else None)
+        self.cmbPickMethod.currentIndexChanged.connect(
+            lambda: self._on_calc() if self._fit_results else None)
         self.tblRawParams.itemChanged.connect(self._on_param_edited)
 
         # 原始数据刷新/写入
@@ -617,6 +623,7 @@ class TDDBPage(QWidget, Ui_Form):
                         "r2_log": 0.0,
                         "n": len(data_vals),
                         "eta_unified": eta,
+                        "raw_vals": data_vals,
                     }
                     # 独立计算 R²
                     plot_d = weibull_plot_data(data_vals)
@@ -626,11 +633,19 @@ class TDDBPage(QWidget, Ui_Form):
                     ss_res = np.sum((wp - fitted) ** 2)
                     ss_tot = np.sum((wp - np.mean(wp)) ** 2)
                     cond_result["r2_log"] = 1 - ss_res / ss_tot if ss_tot > 0 else 0
+                    # 计算 r2_raw（原始尺度：经验 CDF vs 拟合 CDF）
+                    empirical_f = plot_d["ranks"]
+                    fitted_f = 1 - np.exp(-(plot_d["tbd"] / eta) ** unified["beta"])
+                    res_raw = empirical_f - fitted_f
+                    ss_res_raw = np.sum(res_raw ** 2)
+                    ss_tot_raw = np.sum((empirical_f - np.mean(empirical_f)) ** 2)
+                    cond_result["r2_raw"] = 1 - ss_res_raw / ss_tot_raw if ss_tot_raw > 0 else 0
                     new_results[(str(grp), *key)] = cond_result
             else:
                 # 独立斜率
                 for key, data_vals in conditions_data.items():
                     cond_result = fit_weibull(data_vals)
+                    cond_result["raw_vals"] = data_vals
                     new_results[(str(grp), *key)] = cond_result
 
             # 收集 β 诊断数据
@@ -1040,7 +1055,7 @@ class TDDBPage(QWidget, Ui_Form):
             "Group", "Vgs", "Temp", "Area",
             "β", "η_TBD", "η_QBD",
             "R²_raw", "R²_log",
-            "γ (E)", "G (1/E)", "βv (V)", "Ea",
+            "γ(cm/MV)", "G(MV/cm)", "βv(1/V)", "Ea(eV)",
         ])
         tbl.setRowCount(len(all_keys))
         tbl.blockSignals(True)
@@ -1148,6 +1163,8 @@ class TDDBPage(QWidget, Ui_Form):
             v_op = self.editWorkVoltage.value()
             tox = self.editOxideThickness.value()
             t_op = self.editWorkTemp.value()
+            v_assess = self.editStressVoltage.value()
+            t_assess = self.editStressTemp.value()
         except (ValueError, AttributeError):
             QMessageBox.warning(self, "提示", "请填写有效的参数")
             return
@@ -1163,6 +1180,18 @@ class TDDBPage(QWidget, Ui_Form):
                 groups_data[grp] = {"v": [], "eta": [], "temp": []}
             v = float(key[1])
             eta = result["eta"]
+            # 原始数据平滑取点：对 TBD 排序→中位秩→PCHIP 插值→F=63.2% 处 η
+            if pick_method == 1:
+                raw_vals = result.get("raw_vals")
+                if raw_vals is not None and len(raw_vals) > 1:
+                    sorted_vals = np.sort(raw_vals)
+                    n = len(sorted_vals)
+                    ranks = (np.arange(1, n + 1, dtype=float) - 0.3) / (n + 0.4)
+                    from scipy.interpolate import PchipInterpolator
+                    interp = PchipInterpolator(ranks, sorted_vals)
+                    eta = float(interp(0.6321205588285577))  # 1 - 1/e
+            # 缓存各 key 对应的实际 η（平滑或 Weibull），供表格显示用
+            self._last_etas[key] = eta
             t = float(key[2]) if len(key) > 2 else 25.0
             beta = result["beta"]
             groups_data[grp]["v"].append(v)
@@ -1206,6 +1235,14 @@ class TDDBPage(QWidget, Ui_Form):
                     m = fit_1e_model(v_arr, eta_corrected, tox)
                     model_result = {"g": m["g"], "tau_0": m["tau_0"],
                                     "ea": ea, "r2": m["r2"]}
+                elif model == "√E模型":
+                    t_k = np.where(t_arr < 100, t_arr + 273.15, t_arr)
+                    inv_t = 1.0 / (8.617333262e-5 * t_k)
+                    t_op_k = t_op + 273.15 if t_op < 100 else t_op
+                    eta_corrected = eta_arr * np.exp(-ea * (inv_t - 1.0/(8.617333262e-5 * t_op_k)))
+                    m = fit_sqrt_e_model(v_arr, eta_corrected, tox)
+                    model_result = {"s": m["s"], "a": m["a"],
+                                    "ea": ea, "r2": m["r2"]}
                 else:
                     # V 模型
                     t_k = np.where(t_arr < 100, t_arr + 273.15, t_arr)
@@ -1221,6 +1258,8 @@ class TDDBPage(QWidget, Ui_Form):
                     model_result = fit_e_model(v_arr, eta_arr, tox)
                 elif model == "1/E模型":
                     model_result = fit_1e_model(v_arr, eta_arr, tox)
+                elif model == "√E模型":
+                    model_result = fit_sqrt_e_model(v_arr, eta_arr, tox)
                 else:
                     model_result = fit_v_model(v_arr, eta_arr)
 
@@ -1236,12 +1275,15 @@ class TDDBPage(QWidget, Ui_Form):
                 elif model == "V模型":
                     pred_eta = model_result["a"] * np.exp(
                         -model_result["beta_v"] * v_op + model_result["ea"] / (k * t_op_k))
+                elif model == "√E模型":
+                    pred_eta = model_result["a"] * np.exp(
+                        -model_result["s"] * np.sqrt(eox) + model_result["ea"] / (k * t_op_k))
                 else:
                     pred_eta = model_result["a"] * np.exp(
                         -model_result["gamma"] * eox + model_result["ea"] / (k * t_op_k))
             else:
                 # 单温度：用选定模型直接预测
-                model_short = {"E模型": "E", "1/E模型": "1E", "V模型": "V"}[model]
+                model_short = {"E模型": "E", "1/E模型": "1E", "V模型": "V", "√E模型": "SQE"}[model]
                 pred_eta = predict_lifetime(model_short, model_result, v_op, t_op, tox)
 
             use_tbd = self.rdoTBD.isChecked()
@@ -1256,10 +1298,34 @@ class TDDBPage(QWidget, Ui_Form):
             life_results.append(life_row)
             # 缓存 η/β 用于曲线绘制（不在表格中显示）
             self._last_curve_data[grp] = {"eta": pred_eta, "beta": beta_val}
+            # 计算考核电压/温度下的 η_assess（与 pred_eta 同公式，换电压+温度）
+            try:
+                if has_multiple_temps:
+                    eox_a = v_assess / tox * 10.0
+                    t_assess_k = t_assess + 273.15 if t_assess < 100 else t_assess
+                    k = 8.617333262e-5
+                    if model == "1/E模型":
+                        η_assess = model_result.get("tau_0", 0) * np.exp(
+                            model_result.get("g", 0) / eox_a + model_result.get("ea", 0) / (k * t_assess_k))
+                    elif model == "V模型":
+                        η_assess = model_result.get("a", 0) * np.exp(
+                            -model_result.get("beta_v", 0) * v_assess + model_result.get("ea", 0) / (k * t_assess_k))
+                    elif model == "√E模型":
+                        η_assess = model_result.get("a", 0) * np.exp(
+                            -model_result.get("s", 0) * np.sqrt(eox_a) + model_result.get("ea", 0) / (k * t_assess_k))
+                    else:
+                        η_assess = model_result.get("a", 0) * np.exp(
+                            -model_result.get("gamma", 0) * eox_a + model_result.get("ea", 0) / (k * t_assess_k))
+                else:
+                    η_assess = predict_lifetime(model_short, model_result, v_assess, t_op, tox)
+                self._last_curve_data[grp]["eta_assess"] = float(η_assess)
+            except Exception:
+                self._last_curve_data[grp]["eta_assess"] = None
             # 缓存模型参数用于回填原始数据查看表
             self._last_model_params[grp] = {
                 "gamma": model_result.get("gamma", 0),
                 "g": model_result.get("g", 0),
+                "s": model_result.get("s", 0),
                 "beta_v": model_result.get("beta_v", 0),
                 "ea": model_result.get("ea", 0),
             }
@@ -1286,6 +1352,9 @@ class TDDBPage(QWidget, Ui_Form):
         self._last_fr_results = fr_results
         # 回填模型参数到原始数据查看表
         self._sync_model_params_to_table()
+        # 填充模型参数结果表
+        self._populate_model_parameter_table(
+            model, model_result, v_op, t_op, v_assess, t_assess, tox)
 
     def _populate_life_table(self, results: list[dict]):
         """填充寿命结果表。"""
@@ -1360,6 +1429,159 @@ class TDDBPage(QWidget, Ui_Form):
         tbl.setModel(PandasModel(df))
         tbl.resizeColumnsToContents()
 
+    def _populate_model_parameter_table(
+        self, model_name: str, model_result: dict,
+        v_op: float, t_op: float, v_assess: float, t_assess: float,
+        tox: float,
+    ):
+        """填充模型参数结果表 tblModelParameter。"""
+        from PySide6.QtCore import QAbstractTableModel, QModelIndex
+
+        # 确定当前模型的参数列
+        model_short = {"E模型": "E", "1/E模型": "1E", "V模型": "V", "√E模型": "SQE"}.get(model_name, "E")
+        if model_short == "E":
+            param_keys = {"γ(cm/MV)": "gamma"}
+        elif model_short == "1E":
+            param_keys = {"G(MV/cm)": "g"}
+        elif model_short == "SQE":
+            param_keys = {"S(√(cm/MV))": "s"}
+        else:
+            param_keys = {"βv(1/V)": "beta_v"}
+
+        # 收集每个条件的拟合结果
+        rows = []
+        model_short_calc = {"E模型": "E", "1/E模型": "1E", "V模型": "V", "√E模型": "SQE"}[model_name]
+
+        for key, result in self._fit_results.items():
+            grp = key[0]
+            v = float(key[1])
+            t = float(key[2]) if len(key) > 2 else None
+            area = float(key[3]) if len(key) > 3 else None
+
+            β = result.get("beta", None)
+            η = self._last_etas.get(key, result.get("eta", None))
+            r2_raw = result.get("r2_raw", None)
+            r2_log = result.get("r2_log", None)
+
+            # 从缓存读取 η_op 和 η_assess（已在 _on_calc 中按组正确计算）
+            curve = self._last_curve_data.get(grp, {})
+            η_op = curve.get("eta", None)
+            η_assess = curve.get("eta_assess", None)
+            af_op = η_op / η if (η is not None and η_op is not None and η > 0) else None
+            af_assess = η_assess / η if (η is not None and η_assess is not None and η > 0) else None
+            af_vassess_vop = η_op / η_assess if (η_assess is not None and η_op is not None and η_assess > 0) else None
+
+            # 模型参数（只显示当前模型对应的，其余留空）
+            gamma_val = model_result.get("gamma") if model_short == "E" else None
+            g_val = model_result.get("g") if model_short == "1E" else None
+            beta_v_val = model_result.get("beta_v") if model_short == "V" else None
+            ea_val = model_result.get("ea", None)
+
+            row = {
+                "Group": grp,
+                "Vgs(V)": v,
+                "Temp(℃)": t if t is not None else "",
+                "Area": area if area is not None else "",
+                "β": β if (β is not None and β != 0) else "",
+                "η_TBD(s)": η if (η is not None and η != 0) else "",
+                "η_QBD(s)": "",  # QBD 填充在下面的另一个循环
+                "R²_raw": r2_raw if r2_raw is not None else "",
+                "R²_log": r2_log if r2_log is not None else "",
+            }
+            # 模型参数
+            for label, key_name in param_keys.items():
+                row[label] = model_result.get(key_name, "")
+            # Ea 如有则显示
+            if ea_val is not None and ea_val != 0:
+                row["Ea(eV)"] = ea_val
+            row["AF(考核)"] = af_op if (af_op is not None and af_op != 0) else ""
+            row["AF(老化)"] = af_vassess_vop if (af_vassess_vop is not None and af_vassess_vop != 0) else ""
+            rows.append(row)
+
+        # 补充 QBD 结果
+        if self._fit_results_qbd:
+            for key, result in self._fit_results_qbd.items():
+                for row in rows:
+                    grp = row["Group"]
+                    v = float(key[1])
+                    t = float(key[2]) if len(key) > 2 else None
+                    area = float(key[3]) if len(key) > 3 else None
+                    if row["Vgs(V)"] == v and (t is None or row["Temp(℃)"] == t or row["Temp(℃)"] == ""):
+                        η_qbd = result.get("eta", None)
+                        row["η_QBD(s)"] = η_qbd if (η_qbd is not None and η_qbd != 0) else ""
+                        β_qbd = result.get("beta", None)
+                        if β_qbd is not None and β_qbd != 0 and row["β"] == "":
+                            row["β"] = β_qbd
+                        break
+
+        if not rows:
+            return
+
+        df = pd.DataFrame(rows)
+        # 排序
+        df.sort_values(["Group", "Vgs(V)"], inplace=True, ignore_index=True)
+
+        # 替换 0 为空字符串
+        df = df.replace(0, "").replace(0.0, "")
+
+        tbl = self.tblModelParameter
+        old_model = tbl.model()
+        if old_model:
+            tbl.setModel(None)
+            old_model.deleteLater()
+
+        class PandasModel(QAbstractTableModel):
+            def __init__(self, data):
+                super().__init__()
+                self._data = data
+            def rowCount(self, parent=QModelIndex()): return len(self._data)
+            def columnCount(self, parent=QModelIndex()): return len(self._data.columns)
+            def data(self, index, role=Qt.ItemDataRole.DisplayRole):
+                if role == Qt.ItemDataRole.DisplayRole:
+                    val = self._data.iloc[index.row(), index.column()]
+                    if isinstance(val, float):
+                        if abs(val) < 0.01 or abs(val) >= 1e6:
+                            return f"{val:.3e}"
+                        return f"{val:.4f}"
+                    return str(val) if val != "" else ""
+                return None
+            def headerData(self, section, orientation, role=Qt.ItemDataRole.DisplayRole):
+                if role == Qt.ItemDataRole.DisplayRole:
+                    if orientation == Qt.Orientation.Horizontal:
+                        return self._data.columns[section]
+                return None
+
+        tbl.setModel(PandasModel(df))
+        tbl.resizeColumnsToContents()
+
+        # 同步填充 tblRawParams（可编辑版本）
+        raw = self.tblRawParams
+        raw.blockSignals(True)
+        raw.clear()
+        raw.setColumnCount(len(df.columns))
+        raw.setHorizontalHeaderLabels(list(df.columns))
+        raw.setRowCount(len(df))
+        for r_idx in range(len(df)):
+            for c_idx, col in enumerate(df.columns):
+                val = df.iloc[r_idx, c_idx]
+                txt = ""
+                if isinstance(val, float):
+                    if abs(val) < 0.01 or abs(val) >= 1e6:
+                        txt = f"{val:.3e}"
+                    else:
+                        txt = f"{val:.4f}"
+                elif val != "":
+                    txt = str(val)
+                item = QTableWidgetItem(txt)
+                # β 和 η 列可编辑（列名包含 β 或 η）
+                if any(k in col for k in ["β", "η", "AF"]):
+                    item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable)
+                else:
+                    item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                raw.setItem(r_idx, c_idx, item)
+        raw.blockSignals(False)
+        raw.resizeColumnsToContents()
+
     def _draw_model_plot(self, groups_data, model_result, model_name, v_op, tox):
         """绘制模型拟合图。"""
         import plotly.graph_objects as go
@@ -1377,7 +1599,7 @@ class TDDBPage(QWidget, Ui_Form):
 
         # 拟合曲线
         v_fit = np.linspace(min(v_op, min(gd["v"])), max(gd["v"]), 100)
-        model_short = {"E模型": "E", "1/E模型": "1E", "V模型": "V"}.get(model_name, "E")
+        model_short = {"E模型": "E", "1/E模型": "1E", "V模型": "V", "√E模型": "SQE"}.get(model_name, "E")
         eta_fit = []
         for v in v_fit:
             try:
@@ -1419,6 +1641,7 @@ class TDDBPage(QWidget, Ui_Form):
             "E模型": "E 模型：η = A·exp(-γ·Eox)\nEox = V/Tox (MV/cm)，γ 为电场加速因子",
             "1/E模型": "1/E 模型：η = τ₀·exp(G/Eox)\nG 为击穿场强因子 (MV/cm)",
             "V模型": "V 模型：η = A·exp(-βv·V)\nβv 为电压加速因子 (1/V)",
+            "√E模型": "√E 模型：η = A·exp(-S·√Eox)\nS 为 sqrt(E) 加速因子 (√(cm/MV))",
         }
         model_key = _FORMULA_MODEL_MAP.get(model)
         try:

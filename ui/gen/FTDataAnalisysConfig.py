@@ -6,6 +6,7 @@
 """
 
 import logging
+import os
 from pathlib import Path
 from typing import Any
 
@@ -13,7 +14,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QDialog, QFileDialog, QGridLayout, QHeaderView,
     QLabel, QLineEdit, QMessageBox, QPushButton, QTableWidgetItem,
-    QVBoxLayout, QSpacerItem, QSizePolicy
+    QVBoxLayout, QSpacerItem, QSizePolicy, QSpinBox
 )
 
 from .FTDataAnalisysConfig_ui import Ui_ConfigDialog
@@ -42,6 +43,7 @@ class ConfigDialog(QDialog, Ui_ConfigDialog):
         self._init_template_tab()
         self._init_calc_tab()
         self._init_ut_tab()
+        self._init_signature_tab()
         self._connect_signals()
         self._load_sections()
         self._load_config()
@@ -73,6 +75,36 @@ class ConfigDialog(QDialog, Ui_ConfigDialog):
         # 连接筛选信号
         self.editInclude.textChanged.connect(self._on_filter_changed)
         self.editExclude.textChanged.connect(self._on_filter_changed)
+
+        # ── 缓存地址 ──
+        from core.ft_cache import _resolve_cache_path, ft_cache, _resolve_program_dir
+        self.editCachePath.setText(self._cm.get("cache_path", "%PROGRAM_DIR%/cache"))
+
+        def _on_open_cache():
+            path = _resolve_cache_path(self.editCachePath.text())
+            import subprocess, sys
+            if sys.platform == "win32":
+                os.startfile(str(path))
+            else:
+                subprocess.run(["xdg-open", str(path)], check=False)
+
+        def _on_select_cache():
+            from PySide6.QtWidgets import QFileDialog
+            current = _resolve_cache_path(self.editCachePath.text())
+            d = QFileDialog.getExistingDirectory(self, "选择缓存目录", str(current))
+            if d:
+                self.editCachePath.setText(d)
+
+        self.btnOpenCachePath.clicked.connect(_on_open_cache)
+        self.btnSelectCachePath.clicked.connect(_on_select_cache)
+        self.editCachePath.textChanged.connect(self._on_cache_path_changed)
+
+    def _on_cache_path_changed(self, text: str):
+        """缓存地址变更时更新配置。"""
+        from core.ft_cache import _resolve_cache_path, ft_cache
+        resolved = str(_resolve_cache_path(text))
+        ft_cache.set_cache_dir(resolved)
+        self._cm.set("cache_path", text)
 
     def _on_filter_changed(self):
         inc = self.editInclude.text().strip()
@@ -488,8 +520,7 @@ class ConfigDialog(QDialog, Ui_ConfigDialog):
             self._fg_row_checks.append(row_btns)
 
             edit = QLineEdit()
-            edit.setReadOnly(True)
-            edit.setPlaceholderText("选择元素后自动生成")
+            edit.setPlaceholderText("选择元素后自动生成，可前后追加自定义内容")
             edit.setFixedHeight(28)
             grid.addWidget(edit, row_idx + 1, self._fg_max_cols)
             self._fg_row_results.append(edit)
@@ -517,7 +548,23 @@ class ConfigDialog(QDialog, Ui_ConfigDialog):
             btn = self._fg_row_checks[row][col]
             if btn and btn.isChecked():
                 selected.append(parts[col])
-        self._fg_row_results[row].setText("_".join(selected))
+        new_auto_key = "_".join(selected)
+
+        edit = self._fg_row_results[row]
+        current = edit.text()
+        old_key = getattr(edit, '_fg_last_auto_key', None)
+
+        if old_key and old_key in current:
+            # 保留用户在自动 key 前后追加的内容
+            idx = current.index(old_key)
+            prefix = current[:idx]
+            suffix = current[idx + len(old_key):]
+            edit.setText(prefix + new_auto_key + suffix)
+        else:
+            # 首次或用户完全重写了 -> 直接设新值
+            edit.setText(new_auto_key)
+
+        edit._fg_last_auto_key = new_auto_key
 
     def _fg_update_all_results(self):
         for row in range(len(self._fg_files)):
@@ -551,12 +598,35 @@ class ConfigDialog(QDialog, Ui_ConfigDialog):
             return
         for r, fn in enumerate(self._fg_files):
             if fn in data:
-                target = data[fn].split("_")
-                for col in range(min(len(self._fg_elements[r]), self._fg_max_cols)):
-                    btn = self._fg_row_checks[r][col]
-                    if btn:
-                        btn.setChecked(self._fg_elements[r][col] in target)
-                self._fg_update_result(r)
+                saved_text = data[fn]
+
+                # 从文件名各段中找到在 saved_text 中连续出现的组合，
+                # 逆序匹配最长的（避免短值误匹配）
+                parts = self._fg_elements[r]
+                best_auto = ""
+                best_len = 0
+                for start in range(len(parts)):
+                    for end in range(start + 1, len(parts) + 1):
+                        candidate = "_".join(parts[start:end])
+                        if candidate in saved_text and len(candidate) > best_len:
+                            best_auto = candidate
+                            best_len = len(candidate)
+
+                # 设置 checkbox：匹配到的段选中，其余不选
+                if best_auto:
+                    auto_parts = set(best_auto.split("_"))
+                    for col in range(min(len(parts), self._fg_max_cols)):
+                        btn = self._fg_row_checks[r][col]
+                        if btn:
+                            btn.setChecked(parts[col] in auto_parts)
+
+                # 直接设 QLineEdit 文本，用保存的值完整保留
+                edit = self._fg_row_results[r]
+                edit.setText(saved_text)
+
+                # 更新 _fg_last_auto_key 供后续 _fg_update_result 使用
+                edit._fg_last_auto_key = best_auto
+
         self._fg_update_col_states()
 
     # ═══════════════════════════════════════════════════════════
@@ -638,6 +708,324 @@ class ConfigDialog(QDialog, Ui_ConfigDialog):
             self.tblSN.setItem(row, 1, QTableWidgetItem(grp))
             self.tblSN.setItem(row, 2, QTableWidgetItem(""))
         self._sn_add_empty_row()
+
+    # ═══════════════════════════════════════════════════════════
+    #  FT 文件签名配置 tab
+    # ═══════════════════════════════════════════════════════════
+
+    def _init_signature_tab(self):
+        """FT 文件签名配置 — 编辑 ft_data_config.toml 中的 [[signatures]]"""
+        import tomllib
+
+        self._sig_path = Path(__file__).parent.parent.parent / "config" / "ft_data_config.toml"
+        self._sig_data: list[dict] = []
+        self._sig_current_idx: int | None = None
+        self._sig_fields = [
+            ("format_id", "格式ID", str),
+            ("display_name", "显示名称", str),
+            ("header_identifiers", "表头标识符(逗号分隔)", list),
+            ("part_id_offset", "PART_ID偏移", int),
+            ("data_col_header_offset", "测试列名行偏移", int),
+            ("unit_offset", "单位行偏移", int),
+            ("lower_limit_offset", "下限行偏移", int),
+            ("higher_limit_offset", "上限行偏移", int),
+            ("data_start_offset", "数据起始偏移", int),
+            ("pre_test_columns", "测试前列(逗号分隔)", list),
+            ("delimiter", "分隔符", str),
+            ("encoding", "编码", str),
+            ("stop_at_blank_row", "遇空行停止", bool),
+            ("skip_blank_rows", "跳过空行", bool),
+            ("min_detected_cols", "最少检测列数(可选)", int),
+        ]
+
+        # ── 读取配置 ──
+        self._load_signatures()
+
+        # ── 构建UI ──
+        from PySide6.QtWidgets import (
+            QHBoxLayout, QSplitter, QTableWidget, QTableWidgetItem,
+            QVBoxLayout, QPushButton, QGroupBox, QFormLayout,
+            QLineEdit, QCheckBox, QSpinBox, QLabel, QMessageBox,
+            QWidget, QHeaderView
+        )
+
+        self.tabSignature = QWidget()
+        self.tabSignature.setObjectName("tabSignature")
+        self.tabConfig.addTab(self.tabSignature, "文件签名")
+
+        # 主布局：左侧列表 + 右侧编辑
+        hl = QHBoxLayout(self.tabSignature)
+        splitter = QSplitter(self.tabSignature)
+
+        # ── 左侧：签名列表 ──
+        left_w = QWidget()
+        left_vl = QVBoxLayout(left_w)
+        left_vl.setContentsMargins(0, 0, 0, 0)
+
+        self._sig_table = QTableWidget()
+        self._sig_table.setColumnCount(3)
+        self._sig_table.setHorizontalHeaderLabels(["格式ID", "显示名称", "标识符"])
+        self._sig_table.horizontalHeader().setStretchLastSection(True)
+        self._sig_table.setSelectionBehavior(QTableWidget.SelectRows)
+        self._sig_table.setSelectionMode(QTableWidget.SingleSelection)
+        self._sig_table.itemSelectionChanged.connect(self._on_sig_selected)
+
+        left_vl.addWidget(self._sig_table)
+
+        btn_hl = QHBoxLayout()
+        self._btn_add_sig = QPushButton("添加")
+        self._btn_del_sig = QPushButton("删除")
+        self._btn_up_sig = QPushButton("上移")
+        self._btn_down_sig = QPushButton("下移")
+        btn_hl.addWidget(self._btn_add_sig)
+        btn_hl.addWidget(self._btn_del_sig)
+        btn_hl.addWidget(self._btn_up_sig)
+        btn_hl.addWidget(self._btn_down_sig)
+        btn_hl.addStretch()
+        left_vl.addLayout(btn_hl)
+        splitter.addWidget(left_w)
+
+        # ── 右侧：编辑面板 ──
+        right_w = QWidget()
+        right_vl = QVBoxLayout(right_w)
+        right_vl.setContentsMargins(0, 0, 0, 0)
+
+        self._sig_grp = QGroupBox("签名详情")
+        form = QFormLayout(self._sig_grp)
+        self._sig_edits: dict[str, QLineEdit | QCheckBox | QSpinBox] = {}
+        self._sig_meta_fields = {}
+
+        for key, label, typ in self._sig_fields:
+            if typ == str:
+                w = QLineEdit()
+                form.addRow(label + ":", w)
+                self._sig_edits[key] = w
+            elif typ == int:
+                w = QSpinBox()
+                w.setRange(-99, 99)
+                form.addRow(label + ":", w)
+                self._sig_edits[key] = w
+            elif typ == bool:
+                w = QCheckBox()
+                form.addRow(label + ":", w)
+                self._sig_edits[key] = w
+            elif typ == list:
+                w = QLineEdit()
+                w.setPlaceholderText("用逗号分隔多个值")
+                form.addRow(label + ":", w)
+                self._sig_edits[key] = w
+            self._sig_meta_fields[key] = label
+
+        # skip_row_values 和 column_map 用简化的文本编辑
+        self._edit_skip_row = QLineEdit()
+        self._edit_skip_row.setPlaceholderText("例如: PART_ID=1,END 或 键1=值1,值2")
+        form.addRow("跳过行值:", self._edit_skip_row)
+        self._edit_col_map = QLineEdit()
+        self._edit_col_map.setPlaceholderText("例如: SN=PART_ID 或 原名1=新名1")
+        form.addRow("列名映射:", self._edit_col_map)
+
+        self._sig_grp.setEnabled(False)
+        right_vl.addWidget(self._sig_grp)
+
+        self._btn_save_sig = QPushButton("保存修改")
+        right_vl.addWidget(self._btn_save_sig)
+        right_vl.addStretch()
+        splitter.addWidget(right_w)
+
+        splitter.setSizes([400, 600])
+        hl.addWidget(splitter)
+
+        # ── 信号连接 ──
+        self._btn_add_sig.clicked.connect(self._on_sig_add)
+        self._btn_del_sig.clicked.connect(self._on_sig_delete)
+        self._btn_up_sig.clicked.connect(self._on_sig_move_up)
+        self._btn_down_sig.clicked.connect(self._on_sig_move_down)
+        self._btn_save_sig.clicked.connect(self._on_sig_save)
+
+        # 填充表格
+        self._refresh_sig_table()
+
+    def _load_signatures(self):
+        import tomllib
+        try:
+            raw = self._sig_path.read_bytes()
+            cfg = tomllib.loads(raw.decode("utf-8"))
+            self._sig_data = cfg.get("signatures", [])
+        except Exception:
+            self._sig_data = []
+
+    def _refresh_sig_table(self):
+        self._sig_table.setRowCount(len(self._sig_data))
+        for i, sig in enumerate(self._sig_data):
+            self._sig_table.setItem(i, 0, QTableWidgetItem(sig.get("format_id", "")))
+            self._sig_table.setItem(i, 1, QTableWidgetItem(sig.get("display_name", "")))
+            ids = sig.get("header_identifiers", [])
+            self._sig_table.setItem(i, 2, QTableWidgetItem(", ".join(ids) if ids else ""))
+        self._sig_table.resizeColumnsToContents()
+        # 默认选中第一行
+        if self._sig_data:
+            self._sig_table.selectRow(0)
+
+    def _sig_to_edit(self, sig: dict):
+        """填充编辑面板"""
+        for key, _, typ in self._sig_fields:
+            val = sig.get(key)
+            w = self._sig_edits[key]
+            if val is None:
+                if isinstance(w, QLineEdit):
+                    w.clear()
+                elif isinstance(w, QCheckBox):
+                    w.setChecked(False)
+                elif isinstance(w, QSpinBox):
+                    w.setValue(0)
+                continue
+            if isinstance(w, QLineEdit):
+                if typ == list:
+                    w.setText(", ".join(str(v) for v in val))
+                else:
+                    w.setText(str(val))
+            elif isinstance(w, QCheckBox):
+                w.setChecked(bool(val))
+            elif isinstance(w, QSpinBox):
+                w.setValue(int(val))
+        # skip_row_values
+        sr = sig.get("skip_row_values", {})
+        sr_parts = []
+        for k, v in sr.items():
+            vals = ", ".join(str(x) for x in (v if isinstance(v, list) else [v]))
+            sr_parts.append(f"{k}={vals}")
+        self._edit_skip_row.setText("; ".join(sr_parts))
+        # column_map
+        cm = sig.get("column_map", {})
+        cm_parts = [f"{k}={v}" for k, v in cm.items()]
+        self._edit_col_map.setText(", ".join(cm_parts))
+
+    def _edit_to_sig(self) -> dict:
+        """从编辑面板读取签名"""
+        sig = {}
+        for key, _, typ in self._sig_fields:
+            w = self._sig_edits[key]
+            if isinstance(w, QLineEdit):
+                txt = w.text().strip()
+                if typ == list:
+                    sig[key] = [x.strip() for x in txt.split(",") if x.strip()]
+                elif typ == str:
+                    sig[key] = txt
+            elif isinstance(w, QCheckBox):
+                sig[key] = w.isChecked()
+            elif isinstance(w, QSpinBox):
+                sig[key] = w.value()
+        # skip_row_values
+        sr = {}
+        sr_txt = self._edit_skip_row.text().strip()
+        if sr_txt:
+            for part in sr_txt.split(";"):
+                part = part.strip()
+                if "=" in part:
+                    k, vs = part.split("=", 1)
+                    vals = [x.strip() for x in vs.split(",") if x.strip()]
+                    sr[k.strip()] = vals
+        sig["skip_row_values"] = sr
+        # column_map
+        cm = {}
+        cm_txt = self._edit_col_map.text().strip()
+        if cm_txt:
+            for part in cm_txt.split(","):
+                part = part.strip()
+                if "=" in part:
+                    k, v = part.split("=", 1)
+                    cm[k.strip()] = v.strip()
+        sig["column_map"] = cm
+        return sig
+
+    def _on_sig_selected(self):
+        rows = self._sig_table.selectedItems()
+        if not rows:
+            self._sig_grp.setEnabled(False)
+            return
+        idx = rows[0].row()
+        if 0 <= idx < len(self._sig_data):
+            self._sig_grp.setEnabled(True)
+            self._sig_to_edit(self._sig_data[idx])
+            self._sig_current_idx = idx
+
+    def _on_sig_add(self):
+        self._sig_data.append({
+            "format_id": f"NEW_SIG_{len(self._sig_data)+1}",
+            "display_name": "新签名",
+            "header_identifiers": ["PART_ID", "SOFT_BIN"],
+            "part_id_offset": 0,
+            "data_col_header_offset": 0,
+            "unit_offset": 1,
+            "lower_limit_offset": 2,
+            "higher_limit_offset": 3,
+            "data_start_offset": 4,
+            "pre_test_columns": ["SOFT_BIN"],
+            "delimiter": ",",
+            "encoding": "utf-8-sig",
+            "stop_at_blank_row": True,
+            "skip_blank_rows": True,
+            "skip_row_values": {"PART_ID": ["1", "END"]},
+            "column_map": {},
+        })
+        self._refresh_sig_table()
+        self._sig_table.setCurrentCell(len(self._sig_data) - 1, 0)
+
+    def _on_sig_delete(self):
+        if self._sig_current_idx is None or self._sig_current_idx >= len(self._sig_data):
+            return
+        sig = self._sig_data[self._sig_current_idx]
+        ret = QMessageBox.question(
+            self, "删除签名", f"确定删除签名「{sig.get('format_id', '')}」？",
+            QMessageBox.Yes | QMessageBox.No)
+        if ret == QMessageBox.Yes:
+            self._sig_data.pop(self._sig_current_idx)
+            self._sig_current_idx = None
+            self._sig_grp.setEnabled(False)
+            self._refresh_sig_table()
+
+    def _on_sig_move_up(self):
+        if self._sig_current_idx is None or self._sig_current_idx <= 0:
+            return
+        i = self._sig_current_idx
+        self._sig_data[i], self._sig_data[i-1] = self._sig_data[i-1], self._sig_data[i]
+        self._sig_current_idx = i - 1
+        self._refresh_sig_table()
+        self._sig_table.setCurrentCell(self._sig_current_idx, 0)
+
+    def _on_sig_move_down(self):
+        if self._sig_current_idx is None or self._sig_current_idx >= len(self._sig_data) - 1:
+            return
+        i = self._sig_current_idx
+        self._sig_data[i], self._sig_data[i+1] = self._sig_data[i+1], self._sig_data[i]
+        self._sig_current_idx = i + 1
+        self._refresh_sig_table()
+        self._sig_table.setCurrentCell(self._sig_current_idx, 0)
+
+    def _on_sig_save(self):
+        if self._sig_current_idx is None or self._sig_current_idx >= len(self._sig_data):
+            return
+        self._sig_data[self._sig_current_idx] = self._edit_to_sig()
+        # 写回 TOML
+        self._write_signatures()
+        self._refresh_sig_table()
+        QMessageBox.information(self, "保存成功", "签名配置已保存到 ft_data_config.toml")
+
+    def _write_signatures(self):
+        """将 self._sig_data 写回 ft_data_config.toml，保留 meta_columns"""
+        import tomllib
+        # 读取原文件保留 meta_columns 等非 signatures 内容
+        try:
+            raw = self._sig_path.read_bytes()
+            full = tomllib.loads(raw.decode("utf-8"))
+        except Exception:
+            full = {}
+        # 更新 signatures
+        full["signatures"] = self._sig_data
+        # 序列化写回
+        from .config_manager import _serialize_toml
+        text = _serialize_toml(full)
+        self._sig_path.write_text(text, encoding="utf-8")
 
     # ═══════════════════════════════════════════════════════════
     #  信号连接

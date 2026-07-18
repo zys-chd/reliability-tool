@@ -50,14 +50,28 @@ def _format_toml_value(val: Any) -> str:
 
 
 def _serialize_toml(data: dict) -> str:
-    """将 dict 序列化为 TOML 格式"""
+    """将 dict 序列化为 TOML 格式，支持 [[array_of_tables]] 和普通 [section]"""
     lines = []
     for section_name, section_data in data.items():
-        lines.append(f"[{section_name}]")
-        if isinstance(section_data, dict):
+        if isinstance(section_data, list) and all(isinstance(x, dict) for x in section_data):
+            # [[array_of_tables]] — 如 signatures
+            for item in section_data:
+                lines.append(f"[[{section_name}]]")
+                for k, v in item.items():
+                    if v is not None and v != "" and v != [] and v != {}:
+                        lines.append(f'{k} = {_format_toml_value(v)}')
+                lines.append("")
+        elif isinstance(section_data, dict):
+            # 普通 [section]
+            lines.append(f"[{section_name}]")
             for k, v in section_data.items():
-                lines.append(f'{k} = {_format_toml_value(v)}')
-        lines.append("")
+                if v is not None and v != "" and v != [] and v != {}:
+                    lines.append(f'{k} = {_format_toml_value(v)}')
+            lines.append("")
+        else:
+            # 顶层键值（极少数情况）
+            if section_data is not None:
+                lines.append(f'{section_name} = {_format_toml_value(section_data)}')
     return "\n".join(lines)
 
 

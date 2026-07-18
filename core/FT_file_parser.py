@@ -14,16 +14,58 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-# 标准元数据列（出现在测试项之前）
-META_COLUMNS = [
-    "PART_ID", "file", "SOFT_BIN", "Product",
-    "SubProduct", "TestTime", "TestingTime",
-]
-
 
 class FTParseError(Exception):
     """FT 文件解析失败时抛出。"""
     pass
+
+
+DEFAULT_CONFIG_TOML = """
+[[signatures]]
+format_id = "STS8200_FT_REV"
+display_name = "STS8200 FT反向格式（meta头在后）"
+header_identifiers = ["SITE_NUM", "SOFT_BIN"]
+part_id_offset = 0
+data_col_header_offset = -4
+unit_offset = -3
+lower_limit_offset = -2
+higher_limit_offset = -1
+data_start_offset = 1
+pre_test_columns = ["TEST_NUM"]
+stop_at_blank_row = true
+skip_blank_rows = true
+delimiter = ","
+encoding = "utf-8-sig"
+skip_row_values = {PART_ID = ["1", "END"]}
+column_map = {SN = "PART_ID"}
+
+[[signatures]]
+format_id = "DEFAULT_FT_FILE"
+display_name = "默认FT文件"
+header_identifiers = ["PART_ID", "SOFT_BIN"]
+part_id_offset = 0
+data_col_header_offset = 0
+unit_offset = 1
+lower_limit_offset = 2
+higher_limit_offset = 3
+data_start_offset = 4
+pre_test_columns = ["SOFT_BIN"]
+stop_at_blank_row = true
+skip_blank_rows = true
+delimiter = ","
+encoding = "utf-8-sig"
+skip_row_values = {PART_ID = ["1", "END"]}
+column_map = {MODULE_ID = "PART_ID", BIN = "SOFT_BIN"}
+
+[meta_columns]
+PART_ID = "PART_ID"
+SOFT_BIN = "SOFT_BIN"
+file = "file"
+Product = "Product"
+SubProduct = "SubProduct"
+TestTime = "TestTime"
+TestingTime = "TestingTime"
+"""
 
 
 class FTData:
@@ -42,15 +84,51 @@ class FTData:
         if not self._path.exists():
             raise FTParseError(f"文件不存在: {self._path}")
 
-        self._config = self._load_config(config_path)
+        cfg = Path(config_path) if config_path else Path("ft_data_config.toml")
+        if not cfg.exists():
+            # 配置文件不存在则自动用默认配置新建
+            cfg.parent.mkdir(parents=True, exist_ok=True)
+            cfg.write_text(DEFAULT_CONFIG_TOML, encoding="utf-8")
+        self._config = self._load_config(cfg)
+
         self._raw_lines: list[str] = []
         self._df: pd.DataFrame | None = None
         self._units: dict[str, str] = {}
         self._lower_limits: dict[str, float] = {}
         self._higher_limits: dict[str, float] = {}
         self._meta: dict = {}
+        self._meta_header: list[str] = []
+        self._test_header: list[str] = []
 
         self._parse()
+
+    # ══════════════════════════════════════════════════════════════
+    #  缓存序列化
+    # ══════════════════════════════════════════════════════════════
+
+    def _dump_state(self) -> dict:
+        return {
+            "_df": self._df,
+            "_units": self._units,
+            "_lower_limits": self._lower_limits,
+            "_higher_limits": self._higher_limits,
+            "_meta_header": self._meta_header,
+            "_test_header": self._test_header,
+            "_meta": self._meta,
+            "_fmt": self._fmt,
+            "_config": self._config,
+        }
+
+    def _load_state(self, state: dict):
+        self._df = state.get("_df")
+        self._units = state.get("_units", {})
+        self._lower_limits = state.get("_lower_limits", {})
+        self._higher_limits = state.get("_higher_limits", {})
+        self._meta_header = state.get("_meta_header", [])
+        self._test_header = state.get("_test_header", [])
+        self._meta = state.get("_meta", {})
+        self._fmt = state.get("_fmt")
+        self._config = state.get("_config", {})
 
     # ══════════════════════════════════════════════════════════════
     #  Public API
@@ -58,10 +136,13 @@ class FTData:
 
     @property
     def data(self) -> pd.DataFrame:
-        """返回纯数据部分（不含 Unit/LL/HL 三行 meta）。"""
         if self._df is None or len(self._df) < 4:
             return pd.DataFrame()
-        return self._df.iloc[3:].reset_index(drop=True)
+        df = self._df.iloc[3:].reset_index(drop=True)
+        for col in self._test_header:
+            if col in df.columns:
+                df[col] = df[col].astype(float)
+        return df
 
     @property
     def raw_df(self) -> pd.DataFrame:
@@ -83,13 +164,13 @@ class FTData:
     def test_columns(self) -> list[str]:
         if self._df is None:
             return []
-        return [c for c in self._df.columns if c not in META_COLUMNS]
+        return list(self._test_header)
 
     @property
     def meta_columns(self) -> list[str]:
         if self._df is None:
             return []
-        return [c for c in META_COLUMNS if c in self._df.columns]
+        return list(self._meta_header)
 
     @property
     def path(self) -> Path:
@@ -123,6 +204,7 @@ class FTData:
     def _parse(self):
         # 1. 检测格式
         fmt = self._detect_format()
+        self._fmt = fmt
         sig = fmt["sig"]
         delimiter = fmt["delimiter"]
         header_row = fmt["header_row"]
@@ -164,6 +246,8 @@ class FTData:
         # 6. 拆分为 meta 列和测试列
         meta_header = final_headers[:test_start]
         test_header = final_headers[test_start:]
+        self._meta_header = meta_header
+        self._test_header = test_header
 
         # 7. 读取各偏移行的数据
         #    单位行 / 下限行 / 上限行 / 数据起始行
@@ -212,7 +296,7 @@ class FTData:
         # 10. 提取单位 / limit 到 dict
         self._extract_meta_rows()
 
-        # 11. 单位转换
+        # 11. 单位转换 + 统一数值列
         self._apply_unit_conversion()
 
         # 12. 过滤无效行
@@ -262,6 +346,7 @@ class FTData:
                     continue
 
                 id_count = len(identifiers)
+                min_cols = sig.get("min_detected_cols", 0)
 
                 if best is not None and id_count < best_id_count:
                     continue
@@ -296,6 +381,10 @@ class FTData:
                                 break
 
                     if not all_hit:
+                        continue
+
+                    detected_cols = [c for c in cells if c.strip()]
+                    if len(detected_cols) < min_cols:
                         continue
 
                     data_start_offset = sig.get("data_start_offset", 1)
@@ -333,8 +422,9 @@ class FTData:
         return self._split_delimiter(self._raw_lines[row_idx], delimiter)
 
     def _safe_row(self, row_idx: int, delimiter: str) -> list[str]:
-        """安全取一行，越界返回空列表。"""
-        return self._split_line(row_idx, delimiter) if row_idx >= 0 else []
+        """安全取一行，越界返回空列表。
+        允许负数索引（指向 header 之前的行）。"""
+        return self._split_line(row_idx, delimiter) if 0 <= row_idx < len(self._raw_lines) else []
 
     @staticmethod
     def _merge_row_pair(row_a: list[str], row_b: list[str]) -> list[str]:
@@ -386,11 +476,11 @@ class FTData:
             return
 
         for col in self._df.columns:
-            if col in META_COLUMNS:
+            if col.upper() in {c.upper() for c in self._meta_header}:
                 continue
             try:
                 unit_val = str(self._df.iloc[0][col])
-                if unit_val and unit_val != "nan":
+                if unit_val and unit_val not in ("nan", "None", ""):
                     self._units[col] = unit_val
             except Exception:
                 pass
@@ -408,35 +498,34 @@ class FTData:
                 pass
 
     def _apply_unit_conversion(self):
-        """将数据部分的值转为 SI 单位。"""
+        """将数据部分的值转为 SI 单位 + 统一数值列（向量化）。"""
         from core.unit_converter import UnitConverter
 
-        if self._df is None or len(self._df) < 3:
+        if self._df is None or len(self._df) < 4:
             return
 
+        meta_header_upper = {c.upper() for c in self._meta_header}
+        data_idx = range(3, len(self._df))
+
         for col in self._df.columns:
-            if col in META_COLUMNS:
+            if col.upper() in meta_header_upper:
                 continue
             unit_str = self._units.get(col, "")
-            if not unit_str:
-                continue
+            col_idx = self._df.columns.get_loc(col)
 
-            si_unit, multiplier = UnitConverter.parse_unit(unit_str)
-            if callable(multiplier):
-                _fn = multiplier
-                for i in range(3, len(self._df)):
-                    val = self._df.iloc[i][col]
-                    try:
-                        self._df.iloc[i, self._df.columns.get_loc(col)] = _fn(float(val))
-                    except (ValueError, TypeError):
-                        pass
-            elif multiplier != 1.0:
-                for i in range(3, len(self._df)):
-                    val = self._df.iloc[i][col]
-                    try:
-                        self._df.iloc[i, self._df.columns.get_loc(col)] = float(val) * multiplier
-                    except (ValueError, TypeError):
-                        pass
+            raw = self._df.iloc[data_idx, col_idx]
+            numeric = pd.to_numeric(raw, errors="coerce")
+
+            if unit_str:
+                si_unit, multiplier = UnitConverter.parse_unit(unit_str)
+                if callable(multiplier):
+                    numeric = numeric.apply(multiplier)
+                elif multiplier != 1.0:
+                    numeric = numeric * multiplier
+                self._units[col] = si_unit if si_unit else unit_str
+
+            self._df.iloc[data_idx, col_idx] = numeric
+            # 即使 multiplier=1 也做了 float 转换
             # 更新单位行为 SI 单位
             self._units[col] = si_unit if si_unit else unit_str
 
@@ -449,7 +538,7 @@ class FTData:
         if self._df is None or len(self._df) < 4:
             return
 
-        sig = self._detect_format()["sig"]
+        sig = self._fmt["sig"] if self._fmt else {}
         skip_values = sig.get("skip_row_values", {})
 
         # 前 3 行（Unit/LL/HL）不动

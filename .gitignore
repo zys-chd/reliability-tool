@@ -12,10 +12,13 @@ data/TX
 data/archive
 *.bak
 *.zip
+benchmark_data/
+benchmark_merge_test/
 
 # Virtual environment
 venv/
 .venv/
+cache/
 
 # IDE
 .vscode/
@@ -50,3 +53,5 @@ data/*.csv
 # Generated UI (regenerate from .ui files)
 ui/gen/*_ui.py
 presentation/
+
+.pytest_cache/

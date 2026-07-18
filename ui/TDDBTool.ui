@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1230</width>
-    <height>800</height>
+    <width>1122</width>
+    <height>1073</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -33,6 +33,12 @@
           <enum>Qt::Orientation::Horizontal</enum>
          </property>
          <widget class="QGroupBox" name="gbControl">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="title">
            <string>控制</string>
           </property>
@@ -71,8 +77,8 @@
                    <rect>
                     <x>0</x>
                     <y>0</y>
-                    <width>806</width>
-                    <height>495</height>
+                    <width>726</width>
+                    <height>760</height>
                    </rect>
                   </property>
                  </widget>
@@ -181,7 +187,7 @@
              </property>
             </widget>
            </item>
-           <item row="3" column="1">
+           <item row="1" column="2">
             <widget class="QPushButton" name="btnSetting">
              <property name="text">
               <string>设置</string>
@@ -221,167 +227,24 @@
           <enum>Qt::Orientation::Vertical</enum>
          </property>
          <widget class="QGroupBox" name="gbParamConfig">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="title">
            <string>参数配置</string>
           </property>
           <layout class="QGridLayout" name="paramGrid">
-           <item row="0" column="8">
-            <spacer name="horizontalSpacer_4">
-             <property name="orientation">
-              <enum>Qt::Orientation::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item row="1" column="1">
-            <widget class="QDoubleSpinBox" name="editWorkTemp">
-            <property name="decimals">
-             <number>1</number>
-            </property>
-            <property name="minimum">
-             <double>-5000.000000000000000</double>
-            </property>
-            <property name="maximum">
-             <double>5000.000000000000000</double>
-            </property>
-            <property name="value">
-             <double>25.000000000000000</double>
-            </property>
-           </widget>
-           </item>
-           <item row="0" column="11">
-            <spacer name="horizontalSpacer">
-             <property name="orientation">
-              <enum>Qt::Orientation::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item row="0" column="2">
-            <spacer name="horizontalSpacer_2">
-             <property name="orientation">
-              <enum>Qt::Orientation::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item row="0" column="1">
-            <widget class="QDoubleSpinBox" name="editWorkVoltage">
-            <property name="decimals">
-             <number>1</number>
-            </property>
-            <property name="minimum">
-             <double>-5000.000000000000000</double>
-            </property>
-            <property name="maximum">
-             <double>5000.000000000000000</double>
-            </property>
-            <property name="value">
-             <double>3.300000000000000</double>
-            </property>
-           </widget>
-           </item>
-           <item row="0" column="9">
-            <widget class="QLabel" name="lblPickMethod">
-             <property name="text">
-              <string>取点方式：</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="12">
+           <item row="0" column="15">
             <widget class="QPushButton" name="btnCalc">
              <property name="text">
               <string>计算</string>
              </property>
             </widget>
            </item>
-           <item row="0" column="6">
-            <widget class="QLabel" name="lblTDDBModel">
-             <property name="text">
-              <string>TDDB模型：</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="lblWorkTemp">
-             <property name="text">
-              <string>工作温度/℃：</string>
-             </property>
-            </widget>
-           </item>
            <item row="0" column="10">
-            <widget class="QComboBox" name="cmbPickMethod">
-             <item>
-              <property name="text">
-               <string>weibull曲线取点</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>原始数据平滑取点</string>
-              </property>
-             </item>
-            </widget>
-           </item>
-           <item row="0" column="4">
-            <widget class="QDoubleSpinBox" name="editOxideThickness">
-            <property name="decimals">
-             <number>1</number>
-            </property>
-            <property name="minimum">
-             <double>-5000.000000000000000</double>
-            </property>
-            <property name="maximum">
-             <double>5000.000000000000000</double>
-            </property>
-            <property name="value">
-             <double>5.000000000000000</double>
-            </property>
-           </widget>
-           </item>
-           <item row="0" column="3">
-            <widget class="QLabel" name="lblOxideThickness">
-             <property name="text">
-              <string>栅氧厚度/nm：</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="0">
-            <widget class="QLabel" name="lblWorkVoltage">
-             <property name="text">
-              <string>工作电压/V：</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="5">
-            <spacer name="horizontalSpacer_3">
-             <property name="orientation">
-              <enum>Qt::Orientation::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item row="0" column="7">
             <widget class="QComboBox" name="cmbTDDBModel">
              <item>
               <property name="text">
@@ -398,6 +261,206 @@
                <string>V模型</string>
               </property>
              </item>
+             <item>
+              <property name="text">
+               <string>√E模型</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="0" column="4">
+            <widget class="QDoubleSpinBox" name="editWorkTemp">
+             <property name="decimals">
+              <number>1</number>
+             </property>
+             <property name="minimum">
+              <double>-5000.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>5000.000000000000000</double>
+             </property>
+             <property name="value">
+              <double>25.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="9">
+            <widget class="QLabel" name="lblTDDBModel">
+             <property name="text">
+              <string>TDDB模型：</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="8">
+            <spacer name="horizontalSpacer_3">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item row="0" column="6">
+            <widget class="QLabel" name="lblOxideThickness">
+             <property name="text">
+              <string>栅氧厚度/nm：</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="9">
+            <widget class="QLabel" name="lblPickMethod">
+             <property name="text">
+              <string>取点方式：</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="14">
+            <spacer name="horizontalSpacer">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item row="1" column="10">
+            <widget class="QComboBox" name="cmbPickMethod">
+             <item>
+              <property name="text">
+               <string>weibull曲线取点</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>原始数据平滑取点</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QDoubleSpinBox" name="editWorkVoltage">
+             <property name="decimals">
+              <number>1</number>
+             </property>
+             <property name="minimum">
+              <double>-5000.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>5000.000000000000000</double>
+             </property>
+             <property name="value">
+              <double>3.300000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="7">
+            <widget class="QDoubleSpinBox" name="editOxideThickness">
+             <property name="decimals">
+              <number>1</number>
+             </property>
+             <property name="minimum">
+              <double>-5000.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>5000.000000000000000</double>
+             </property>
+             <property name="value">
+              <double>5.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0">
+            <widget class="QLabel" name="lblWorkVoltage">
+             <property name="text">
+              <string>工作电压/V：</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="2">
+            <spacer name="horizontalSpacer_2">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item row="0" column="3">
+            <widget class="QLabel" name="lblWorkTemp">
+             <property name="text">
+              <string>工作温度/℃：</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="5">
+            <spacer name="horizontalSpacer_4">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="lblStressVoltage">
+             <property name="text">
+              <string>老化电压/V：</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QDoubleSpinBox" name="editStressVoltage">
+             <property name="decimals">
+              <number>1</number>
+             </property>
+             <property name="minimum">
+              <double>-5000.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>5000.000000000000000</double>
+             </property>
+             <property name="value">
+              <double>3.300000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="3">
+            <widget class="QLabel" name="lblStressTemp">
+             <property name="text">
+              <string>老化温度/℃：</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="4">
+            <widget class="QDoubleSpinBox" name="editStressTemp">
+             <property name="decimals">
+              <number>1</number>
+             </property>
+             <property name="minimum">
+              <double>-5000.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>5000.000000000000000</double>
+             </property>
+             <property name="value">
+              <double>25.000000000000000</double>
+             </property>
             </widget>
            </item>
           </layout>
@@ -407,6 +470,12 @@
            <enum>Qt::Orientation::Horizontal</enum>
           </property>
           <widget class="QTabWidget" name="twResultView">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="currentIndex">
             <number>0</number>
            </property>
@@ -455,8 +524,8 @@
                     <rect>
                      <x>0</x>
                      <y>0</y>
-                     <width>833</width>
-                     <height>209</height>
+                     <width>751</width>
+                     <height>210</height>
                     </rect>
                    </property>
                    <layout class="QHBoxLayout" name="horizontalLayout">
@@ -512,7 +581,7 @@
                     <rect>
                      <x>0</x>
                      <y>0</y>
-                     <width>833</width>
+                     <width>751</width>
                      <height>210</height>
                     </rect>
                    </property>
@@ -577,11 +646,55 @@
                </layout>
               </widget>
              </item>
+             <item>
+              <widget class="QGroupBox" name="gbModelParameter">
+               <property name="title">
+                <string>模型参数结果</string>
+               </property>
+               <layout class="QGridLayout" name="failGrid_2">
+                <item row="0" column="0" colspan="2">
+                 <widget class="QScrollArea" name="saModelParameter">
+                  <property name="widgetResizable">
+                   <bool>true</bool>
+                  </property>
+                  <widget class="QWidget" name="saModelParameterContent">
+                   <property name="geometry">
+                    <rect>
+                     <x>0</x>
+                     <y>0</y>
+                     <width>751</width>
+                     <height>220</height>
+                    </rect>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout_3">
+                    <item>
+                     <widget class="QTableView" name="tblModelParameter"/>
+                    </item>
+                    <item>
+                     <spacer name="verticalSpacer_3">
+                      <property name="orientation">
+                       <enum>Qt::Orientation::Vertical</enum>
+                      </property>
+                      <property name="sizeHint" stdset="0">
+                       <size>
+                        <width>20</width>
+                        <height>40</height>
+                       </size>
+                      </property>
+                     </spacer>
+                    </item>
+                   </layout>
+                  </widget>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
             </layout>
            </widget>
            <widget class="QWidget" name="tbRawParams">
             <attribute name="title">
-             <string>原始数据查看</string>
+             <string>计算数据查看</string>
             </attribute>
             <layout class="QVBoxLayout" name="rawParamsLayout">
              <item>

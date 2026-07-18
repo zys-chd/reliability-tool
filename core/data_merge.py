@@ -14,7 +14,7 @@ from typing import Optional
 
 import pandas as pd
 
-from .file_parser import read_file
+from .FT_file_parser import FTData, FTParseError
 
 
 # ── 公共工具 ──────────────────────────────────────────────────
@@ -89,6 +89,7 @@ def merge_t0_tx(
     progress: Optional['ProgressReporter'] = None,
     sn_map: Optional[dict[str, str]] = None,
     group_type: str = "filename",
+    config_path: str | None = None,
 ) -> pd.DataFrame:
     """合并 T0 和 TX 数据。
 
@@ -101,6 +102,7 @@ def merge_t0_tx(
     参数:
         on_conflict: 回调(conflicts: list[dict]) → dict {(PART_ID,group,column): chosen_value}
                       在主线程预扫描时收集所有冲突后一次性弹窗处理
+        config_path: FTData 配置文件路径
     """
     all_rows = []
     total_steps = len(t0_paths) + len(tx_paths) + 3
@@ -113,7 +115,12 @@ def merge_t0_tx(
             return pd.DataFrame()
         if progress:
             progress.advance(f"读取 T0 ({i+1}/{len(t0_paths)})")
-        df = read_file(p)
+        try:
+            ft = FTData(p, config_path or "")
+            df = ft.data.copy()
+        except FTParseError as e:
+            print(f"解析失败: {e}")
+            continue
         df["group"] = "T0"
         df["filepath"] = str(Path(p).name)
         all_rows.append(df)
@@ -124,7 +131,12 @@ def merge_t0_tx(
             return pd.DataFrame()
         if progress:
             progress.advance(f"读取 TX ({i+1}/{len(tx_paths)})")
-        df = read_file(p)
+        try:
+            ft = FTData(p, config_path or "")
+            df = ft.data.copy()
+        except FTParseError as e:
+            print(f"解析失败: {e}")
+            continue
         fname = Path(p).name
         if tx_group_map and fname in tx_group_map:
             df["group"] = tx_group_map[fname]

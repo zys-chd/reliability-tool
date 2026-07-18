@@ -57,7 +57,7 @@
       <item row="1" column="3" colspan="2">
        <spacer name="spacerConfig">
         <property name="orientation">
-         <enum>Qt::Horizontal</enum>
+         <enum>Qt::Orientation::Horizontal</enum>
         </property>
         <property name="sizeHint" stdset="0">
          <size>
@@ -80,10 +80,10 @@
    <item row="1" column="0">
     <widget class="QTabWidget" name="tabConfig">
      <property name="tabPosition">
-      <enum>QTabWidget::West</enum>
+      <enum>QTabWidget::TabPosition::West</enum>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="tabGroup">
       <attribute name="title">
@@ -103,10 +103,10 @@
            <item>
             <widget class="QFrame" name="frameFilenameGroup">
              <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+              <enum>QFrame::Shape::StyledPanel</enum>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Raised</enum>
+              <enum>QFrame::Shadow::Raised</enum>
              </property>
              <layout class="QVBoxLayout" name="vlFilenameFrame">
               <item>
@@ -119,8 +119,8 @@
                   <rect>
                    <x>0</x>
                    <y>0</y>
-                   <width>1036</width>
-                   <height>873</height>
+                   <width>98</width>
+                   <height>28</height>
                   </rect>
                  </property>
                 </widget>
@@ -211,30 +211,20 @@
           </attribute>
           <layout class="QGridLayout" name="glTemplate">
            <item row="0" column="0">
-            <widget class="QLabel" name="lblTemplatePath">
+            <widget class="QLabel" name="lblCachePath">
              <property name="text">
-              <string>模板地址：</string>
+              <string>缓存地址：</string>
              </property>
             </widget>
            </item>
-           <item row="0" column="1">
-            <widget class="QLineEdit" name="editTemplatePath"/>
-           </item>
-           <item row="0" column="2">
-            <widget class="QPushButton" name="btnOpenTemplate">
-             <property name="text">
-              <string>打开</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="3">
+           <item row="1" column="3">
             <widget class="QPushButton" name="btnSelectTemplate">
              <property name="text">
               <string>选择</string>
              </property>
             </widget>
            </item>
-           <item row="1" column="0" colspan="4">
+           <item row="2" column="0" colspan="4">
             <widget class="QGroupBox" name="gbPreview">
              <property name="title">
               <string>预览</string>
@@ -250,8 +240,8 @@
                   <rect>
                    <x>0</x>
                    <y>0</y>
-                   <width>1036</width>
-                   <height>889</height>
+                   <width>1029</width>
+                   <height>800</height>
                   </rect>
                  </property>
                  <layout class="QGridLayout" name="glPreview">
@@ -263,6 +253,44 @@
                </widget>
               </item>
              </layout>
+            </widget>
+           </item>
+           <item row="0" column="2">
+            <widget class="QPushButton" name="btnOpenCachePath">
+             <property name="text">
+              <string>打开</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="lblTemplatePath">
+             <property name="text">
+              <string>模板地址：</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="3">
+            <widget class="QPushButton" name="btnSelectCachePath">
+             <property name="text">
+              <string>选择</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLineEdit" name="editTemplatePath"/>
+           </item>
+           <item row="1" column="2">
+            <widget class="QPushButton" name="btnOpenTemplate">
+             <property name="text">
+              <string>打开</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLineEdit" name="editCachePath">
+             <property name="text">
+              <string>%PROGRAM_DIR%/cache</string>
+             </property>
             </widget>
            </item>
           </layout>
@@ -301,7 +329,7 @@
               <item>
                <spacer name="spacerFilter">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -317,7 +345,7 @@
            <item row="1" column="0">
             <widget class="QSplitter" name="splitterTestItems">
              <property name="orientation">
-              <enum>Qt::Horizontal</enum>
+              <enum>Qt::Orientation::Horizontal</enum>
              </property>
              <widget class="QGroupBox" name="gbOrigin">
               <property name="title">
@@ -375,16 +403,16 @@
                </sizepolicy>
               </property>
               <property name="frameShape">
-               <enum>QFrame::StyledPanel</enum>
+               <enum>QFrame::Shape::StyledPanel</enum>
               </property>
               <property name="frameShadow">
-               <enum>QFrame::Raised</enum>
+               <enum>QFrame::Shadow::Raised</enum>
               </property>
               <layout class="QVBoxLayout" name="vlMoveButtons">
                <item>
                 <spacer name="verticalSpacer_2">
                  <property name="orientation">
-                  <enum>Qt::Vertical</enum>
+                  <enum>Qt::Orientation::Vertical</enum>
                  </property>
                  <property name="sizeHint" stdset="0">
                   <size>
@@ -431,7 +459,7 @@
                <item>
                 <spacer name="verticalSpacer_3">
                  <property name="orientation">
-                  <enum>Qt::Vertical</enum>
+                  <enum>Qt::Orientation::Vertical</enum>
                  </property>
                  <property name="sizeHint" stdset="0">
                   <size>
@@ -472,7 +500,7 @@
            <item row="1" column="1">
             <spacer name="verticalSpacer">
              <property name="orientation">
-              <enum>Qt::Vertical</enum>
+              <enum>Qt::Orientation::Vertical</enum>
              </property>
              <property name="sizeHint" stdset="0">
               <size>
@@ -551,7 +579,7 @@
               <item row="0" column="12">
                <spacer name="spacerCalcBatch">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -648,7 +676,7 @@
                    <x>0</x>
                    <y>0</y>
                    <width>98</width>
-                   <height>89</height>
+                   <height>88</height>
                   </rect>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -721,15 +749,15 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>1080</width>
-            <height>999</height>
+            <width>787</width>
+            <height>830</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout_5">
            <item row="17" column="1">
             <spacer name="verticalSpacer_6">
              <property name="orientation">
-              <enum>Qt::Vertical</enum>
+              <enum>Qt::Orientation::Vertical</enum>
              </property>
              <property name="sizeHint" stdset="0">
               <size>
@@ -742,10 +770,10 @@
            <item row="1" column="0">
             <widget class="QFrame" name="gbXLabel">
              <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+              <enum>QFrame::Shape::StyledPanel</enum>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
+              <enum>QFrame::Shadow::Sunken</enum>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_3">
               <item>
@@ -758,7 +786,7 @@
               <item>
                <spacer name="horizontalSpacer_3">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -781,10 +809,10 @@
            <item row="4" column="0">
             <widget class="QFrame" name="gbMarkerOpacity">
              <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+              <enum>QFrame::Shape::StyledPanel</enum>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
+              <enum>QFrame::Shadow::Sunken</enum>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_8">
               <item>
@@ -797,7 +825,7 @@
               <item>
                <spacer name="horizontalSpacer_8">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -826,10 +854,10 @@
            <item row="5" column="0">
             <widget class="QFrame" name="gbPlotRows">
              <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+              <enum>QFrame::Shape::StyledPanel</enum>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
+              <enum>QFrame::Shadow::Sunken</enum>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_11">
               <item>
@@ -842,7 +870,7 @@
               <item>
                <spacer name="horizontalSpacer_11">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -871,10 +899,10 @@
            <item row="8" column="0">
             <widget class="QFrame" name="gbXRange">
              <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+              <enum>QFrame::Shape::StyledPanel</enum>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
+              <enum>QFrame::Shadow::Sunken</enum>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_13">
               <item>
@@ -887,7 +915,7 @@
               <item>
                <spacer name="horizontalSpacer_13">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -941,10 +969,10 @@
            <item row="11" column="0">
             <widget class="QFrame" name="gbLegendFontSize">
              <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+              <enum>QFrame::Shape::StyledPanel</enum>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
+              <enum>QFrame::Shadow::Sunken</enum>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_20">
               <item>
@@ -957,7 +985,7 @@
               <item>
                <spacer name="horizontalSpacer_20">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -986,10 +1014,10 @@
            <item row="5" column="1">
             <widget class="QFrame" name="gbPlotCols">
              <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+              <enum>QFrame::Shape::StyledPanel</enum>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
+              <enum>QFrame::Shadow::Sunken</enum>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_10">
               <item>
@@ -1002,7 +1030,7 @@
               <item>
                <spacer name="horizontalSpacer_10">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -1031,10 +1059,10 @@
            <item row="6" column="0">
             <widget class="QFrame" name="gbTheme">
              <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+              <enum>QFrame::Shape::StyledPanel</enum>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
+              <enum>QFrame::Shadow::Sunken</enum>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_12">
               <item>
@@ -1047,7 +1075,7 @@
               <item>
                <spacer name="horizontalSpacer_12">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -1102,10 +1130,10 @@
            <item row="2" column="1">
             <widget class="QFrame" name="gbGroupBy">
              <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+              <enum>QFrame::Shape::StyledPanel</enum>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
+              <enum>QFrame::Shadow::Sunken</enum>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_6">
               <item>
@@ -1118,7 +1146,7 @@
               <item>
                <spacer name="horizontalSpacer_6">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -1148,10 +1176,10 @@
            <item row="9" column="0">
             <widget class="QFrame" name="gbSaveDir">
              <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+              <enum>QFrame::Shape::StyledPanel</enum>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
+              <enum>QFrame::Shadow::Sunken</enum>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_17">
               <item>
@@ -1164,7 +1192,7 @@
               <item>
                <spacer name="horizontalSpacer_17">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -1200,10 +1228,10 @@
            <item row="3" column="1">
             <widget class="QFrame" name="gbLineWidth">
              <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+              <enum>QFrame::Shape::StyledPanel</enum>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
+              <enum>QFrame::Shadow::Sunken</enum>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_7">
               <item>
@@ -1229,7 +1257,7 @@
               <item>
                <spacer name="horizontalSpacer_7">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -1265,10 +1293,10 @@
            <item row="6" column="1">
             <widget class="QFrame" name="gbPlotSize">
              <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+              <enum>QFrame::Shape::StyledPanel</enum>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
+              <enum>QFrame::Shadow::Sunken</enum>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_15">
               <item>
@@ -1281,7 +1309,7 @@
               <item>
                <spacer name="horizontalSpacer_15">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -1337,10 +1365,10 @@
            <item row="2" column="0">
             <widget class="QFrame" name="gbPlotType">
              <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+              <enum>QFrame::Shape::StyledPanel</enum>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
+              <enum>QFrame::Shadow::Sunken</enum>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_5">
               <item>
@@ -1353,7 +1381,7 @@
               <item>
                <spacer name="horizontalSpacer_5">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -1388,10 +1416,10 @@
            <item row="1" column="1">
             <widget class="QFrame" name="gbYAxisData">
              <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+              <enum>QFrame::Shape::StyledPanel</enum>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
+              <enum>QFrame::Shadow::Sunken</enum>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_4">
               <item>
@@ -1404,7 +1432,7 @@
               <item>
                <spacer name="horizontalSpacer_4">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -1434,10 +1462,10 @@
            <item row="0" column="0">
             <widget class="QFrame" name="gbDrawData">
              <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+              <enum>QFrame::Shape::StyledPanel</enum>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
+              <enum>QFrame::Shadow::Sunken</enum>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout">
               <item>
@@ -1450,7 +1478,7 @@
               <item>
                <spacer name="horizontalSpacer">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -1490,10 +1518,10 @@
            <item row="15" column="0" rowspan="3">
             <widget class="QFrame" name="gbHover">
              <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+              <enum>QFrame::Shape::StyledPanel</enum>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
+              <enum>QFrame::Shadow::Sunken</enum>
              </property>
              <layout class="QGridLayout" name="gridLayout_6">
               <item row="0" column="0">
@@ -1506,7 +1534,7 @@
               <item row="0" column="1">
                <spacer name="horizontalSpacer_24">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -1541,10 +1569,10 @@
            <item row="15" column="1">
             <widget class="QFrame" name="gbTickDecimals">
              <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+              <enum>QFrame::Shape::StyledPanel</enum>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
+              <enum>QFrame::Shadow::Sunken</enum>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_22">
               <item>
@@ -1557,7 +1585,7 @@
               <item>
                <spacer name="horizontalSpacer_22">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -1586,10 +1614,10 @@
            <item row="10" column="1">
             <widget class="QFrame" name="gbLabelFontSize">
              <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+              <enum>QFrame::Shape::StyledPanel</enum>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
+              <enum>QFrame::Shadow::Sunken</enum>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_19">
               <item>
@@ -1602,7 +1630,7 @@
               <item>
                <spacer name="horizontalSpacer_19">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -1631,7 +1659,7 @@
            <item row="18" column="1">
             <spacer name="verticalSpacer_4">
              <property name="orientation">
-              <enum>Qt::Vertical</enum>
+              <enum>Qt::Orientation::Vertical</enum>
              </property>
              <property name="sizeHint" stdset="0">
               <size>
@@ -1644,7 +1672,7 @@
            <item row="18" column="0">
             <spacer name="verticalSpacer_5">
              <property name="orientation">
-              <enum>Qt::Vertical</enum>
+              <enum>Qt::Orientation::Vertical</enum>
              </property>
              <property name="sizeHint" stdset="0">
               <size>
@@ -1657,10 +1685,10 @@
            <item row="11" column="1">
             <widget class="QFrame" name="gbHoverFontSize">
              <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+              <enum>QFrame::Shape::StyledPanel</enum>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
+              <enum>QFrame::Shadow::Sunken</enum>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_23">
               <item>
@@ -1673,7 +1701,7 @@
               <item>
                <spacer name="horizontalSpacer_23">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -1702,10 +1730,10 @@
            <item row="0" column="1">
             <widget class="QFrame" name="gbDataSource">
              <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+              <enum>QFrame::Shape::StyledPanel</enum>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
+              <enum>QFrame::Shadow::Sunken</enum>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_2">
               <item>
@@ -1718,7 +1746,7 @@
               <item>
                <spacer name="horizontalSpacer_2">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -1751,10 +1779,10 @@
            <item row="4" column="1">
             <widget class="QFrame" name="gbLineOpacity">
              <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+              <enum>QFrame::Shape::StyledPanel</enum>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
+              <enum>QFrame::Shadow::Sunken</enum>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_9">
               <item>
@@ -1767,7 +1795,7 @@
               <item>
                <spacer name="horizontalSpacer_9">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -1796,10 +1824,10 @@
            <item row="13" column="1">
             <widget class="QFrame" name="gbTickFormat">
              <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+              <enum>QFrame::Shape::StyledPanel</enum>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
+              <enum>QFrame::Shadow::Sunken</enum>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_21">
               <item>
@@ -1812,7 +1840,7 @@
               <item>
                <spacer name="horizontalSpacer_21">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -1842,10 +1870,10 @@
            <item row="9" column="1">
             <widget class="QFrame" name="gbOutputFormat">
              <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+              <enum>QFrame::Shape::StyledPanel</enum>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
+              <enum>QFrame::Shadow::Sunken</enum>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_16">
               <item>
@@ -1858,7 +1886,7 @@
               <item>
                <spacer name="horizontalSpacer_16">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -1908,10 +1936,10 @@
            <item row="7" column="1">
             <widget class="QFrame" name="gbTickFormat_4">
              <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+              <enum>QFrame::Shape::StyledPanel</enum>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
+              <enum>QFrame::Shadow::Sunken</enum>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_27">
               <item>
@@ -1924,7 +1952,7 @@
               <item>
                <spacer name="horizontalSpacer_29">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -1954,10 +1982,10 @@
            <item row="8" column="1">
             <widget class="QFrame" name="gbYRange">
              <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+              <enum>QFrame::Shape::StyledPanel</enum>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
+              <enum>QFrame::Shadow::Sunken</enum>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_14">
               <item>
@@ -1970,7 +1998,7 @@
               <item>
                <spacer name="horizontalSpacer_14">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -2024,10 +2052,10 @@
            <item row="3" column="0">
             <widget class="QFrame" name="gbMarkerSize">
              <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+              <enum>QFrame::Shape::StyledPanel</enum>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
+              <enum>QFrame::Shadow::Sunken</enum>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_28">
               <item>
@@ -2053,7 +2081,7 @@
               <item>
                <spacer name="horizontalSpacer_28">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -2089,10 +2117,10 @@
            <item row="7" column="0">
             <widget class="QFrame" name="gbTickFormat_3">
              <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+              <enum>QFrame::Shape::StyledPanel</enum>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
+              <enum>QFrame::Shadow::Sunken</enum>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_26">
               <item>
@@ -2105,7 +2133,7 @@
               <item>
                <spacer name="horizontalSpacer_27">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -2135,10 +2163,10 @@
            <item row="13" column="0">
             <widget class="QFrame" name="gbLimitDisplay">
              <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+              <enum>QFrame::Shape::StyledPanel</enum>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
+              <enum>QFrame::Shadow::Sunken</enum>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_25">
               <item>
@@ -2151,7 +2179,7 @@
               <item>
                <spacer name="horizontalSpacer_25">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -2187,10 +2215,10 @@
            <item row="10" column="0">
             <widget class="QFrame" name="gbTitleFontSize">
              <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+              <enum>QFrame::Shape::StyledPanel</enum>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
+              <enum>QFrame::Shadow::Sunken</enum>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_18">
               <item>
@@ -2203,7 +2231,7 @@
               <item>
                <spacer name="horizontalSpacer_18">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -2232,10 +2260,10 @@
            <item row="16" column="1">
             <widget class="QFrame" name="gbTickDecimals_2">
              <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
+              <enum>QFrame::Shape::StyledPanel</enum>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
+              <enum>QFrame::Shadow::Sunken</enum>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_24">
               <item>
@@ -2248,7 +2276,7 @@
               <item>
                <spacer name="horizontalSpacer_26">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -2288,10 +2316,10 @@
    <item row="2" column="0">
     <widget class="QFrame" name="frameButtons">
      <property name="frameShape">
-      <enum>QFrame::StyledPanel</enum>
+      <enum>QFrame::Shape::StyledPanel</enum>
      </property>
      <property name="frameShadow">
-      <enum>QFrame::Raised</enum>
+      <enum>QFrame::Shadow::Raised</enum>
      </property>
      <layout class="QHBoxLayout" name="hlButtons">
       <item>
@@ -2304,7 +2332,7 @@
       <item>
        <spacer name="spacerButtonsLeft">
         <property name="orientation">
-         <enum>Qt::Horizontal</enum>
+         <enum>Qt::Orientation::Horizontal</enum>
         </property>
         <property name="sizeHint" stdset="0">
          <size>

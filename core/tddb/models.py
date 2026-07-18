@@ -9,6 +9,7 @@ __all__ = [
     "fit_e_model",
     "fit_1e_model",
     "fit_v_model",
+    "fit_sqrt_e_model",
     "fit_e_arrhenius",
     "predict_lifetime",
     "predict_failure_rate",
@@ -134,6 +135,44 @@ def fit_v_model(voltages: np.ndarray, etas: np.ndarray) -> dict:
     return {"beta_v": float(beta_v), "a": float(a), "r2": float(r2)}
 
 
+def fit_sqrt_e_model(
+    voltages: np.ndarray, etas: np.ndarray, tox: float
+) -> dict:
+    """Fit √E model (E^{1/2}): η = A * exp(-S * sqrt(Eox)).
+
+    Eox = V / Tox * 10 (MV/cm).
+    sqrt(Eox) in sqrt(MV/cm).
+
+    Parameters
+    ----------
+    voltages : np.ndarray
+        Stress voltages in V.
+    etas : np.ndarray
+        Characteristic life at each voltage.
+    tox : float
+        Oxide thickness in nm.
+
+    Returns
+    -------
+    dict with keys: s (sqrt-E factor), a, r2
+    """
+    v, e = _validate_inputs(voltages, etas)
+    eox = v / tox * 10.0  # MV/cm
+    sqrt_eox = np.sqrt(eox)
+
+    ln_eta = np.log(e)
+    coeffs = np.polyfit(sqrt_eox, ln_eta, 1)
+    s = -coeffs[0]  # slope = -S
+    a = np.exp(coeffs[1])
+
+    fitted = np.polyval(coeffs, sqrt_eox)
+    ss_res = np.sum((ln_eta - fitted) ** 2)
+    ss_tot = np.sum((ln_eta - np.mean(ln_eta)) ** 2)
+    r2 = 1 - ss_res / ss_tot if ss_tot > 0 else 0.0
+
+    return {"s": float(s), "a": float(a), "r2": float(r2)}
+
+
 def fit_e_arrhenius(
     voltages: np.ndarray,
     temperatures: np.ndarray,
@@ -235,6 +274,9 @@ def predict_lifetime(
         return params["tau_0"] * np.exp(params["g"] / eox)
     elif model == "V":
         return params["a"] * np.exp(-params["beta_v"] * v_op)
+    elif model == "SQE":
+        eox = v_op / tox * 10.0
+        return params["a"] * np.exp(-params["s"] * np.sqrt(eox))
     else:
         raise ValueError(f"Unknown model: {model}")
 

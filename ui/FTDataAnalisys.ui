@@ -33,6 +33,12 @@
           <enum>Qt::Orientation::Horizontal</enum>
          </property>
          <widget class="QFrame" name="frameLeftPanel">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="frameShape">
            <enum>QFrame::Shape::StyledPanel</enum>
           </property>
@@ -306,6 +312,12 @@
           </layout>
          </widget>
          <widget class="QGroupBox" name="gbResultDisplay">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="title">
            <string>结果显示</string>
           </property>
@@ -336,11 +348,17 @@
           <enum>Qt::Orientation::Horizontal</enum>
          </property>
          <widget class="QGroupBox" name="groupBox">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="title">
            <string>数据选择</string>
           </property>
          </widget>
-         <widget class="QWidget" name="">
+         <widget class="QWidget" name="layoutWidget">
           <layout class="QVBoxLayout" name="verticalLayout_4">
            <item>
             <widget class="QGroupBox" name="groupBox_2">
@@ -402,7 +420,7 @@
                   <rect>
                    <x>0</x>
                    <y>0</y>
-                   <width>813</width>
+                   <width>774</width>
                    <height>448</height>
                   </rect>
                  </property>
