@@ -6,7 +6,7 @@
 import logging
 import sys
 from pathlib import Path
-from logging.handlers import RotatingFileHandler
+from logging.handlers import TimedRotatingFileHandler
 
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QTextEdit
@@ -103,8 +103,8 @@ def create_logger(name: str, text_edit: QTextEdit | None = None,
     # ── 文件 Handler ──
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     log_file = LOG_DIR / f"{name}.log"
-    fh = RotatingFileHandler(
-        log_file, maxBytes=5 * 1024 * 1024, backupCount=3, encoding="utf-8")
+    fh = TimedRotatingFileHandler(
+        log_file, when="W0", interval=1, backupCount=4, encoding="utf-8")
     fh.setLevel(logging.DEBUG)
     fh.setFormatter(logging.Formatter(_FILE_FORMAT, datefmt=_FILE_DATEFMT))
     logger.addHandler(fh)

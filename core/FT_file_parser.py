@@ -81,6 +81,7 @@ class FTData:
 
     def __init__(self, path: str | Path, config_path: str | Path):
         self._path = Path(path)
+        self.logger = logger
         if not self._path.exists():
             raise FTParseError(f"文件不存在: {self._path}")
 
@@ -330,27 +331,36 @@ class FTData:
         best_id_count = -1
 
         for enc in encodings:
+            self.logger.info(f"尝试编码: {enc}")
             try:
                 text = self._path.read_text(encoding=enc)
-            except Exception:
+            except Exception as e:
+                self.logger.debug(f"编码 {enc} 读取失败: {e}")
                 continue
 
             lines = text.splitlines()
             if not lines:
+                self.logger.debug(f"编码 {enc} 文件内容为空")
                 continue
 
             for sig_idx, sig in enumerate(signatures):
                 delimiter = sig.get("delimiter", ",")
                 identifiers = sig.get("header_identifiers", [])
                 if not identifiers:
+                    self.logger.debug(f"签名 {sig_idx} 无 identifier，跳过")
                     continue
 
                 id_count = len(identifiers)
                 min_cols = sig.get("min_detected_cols", 0)
 
+                fmt_id = sig.get("format_id", f"sig_{sig_idx}")
+                self.logger.debug(f"测试签名 [{fmt_id}]: encoding={enc}, identifiers={identifiers}, min_cols={min_cols}")
+
                 if best is not None and id_count < best_id_count:
+                    self.logger.debug(f"签名 [{fmt_id}] identifier数量({id_count}) < 已有最优({best_id_count})，跳过")
                     continue
                 if best is not None and id_count == best_id_count and sig_idx >= signatures.index(best["sig"]):
+                    self.logger.debug(f"签名 [{fmt_id}] identifier数量相等但序号靠后，跳过")
                     continue
 
                 idents: list[tuple[str, str]] = []
@@ -374,17 +384,23 @@ class FTData:
                         if mode == "exact":
                             if val not in upper_cols:
                                 all_hit = False
+                                self.logger.debug(f"签名 [{fmt_id}] 行{row_idx}: 未找到精确匹配 '{val}' (可用: {upper_cols})")
                                 break
                         elif mode == "startswith":
                             if not any(c.startswith(val) for c in upper_cols):
                                 all_hit = False
+                                self.logger.debug(f"签名 [{fmt_id}] 行{row_idx}: 未找到前缀匹配 '{val}' (可用: {upper_cols})")
                                 break
 
                     if not all_hit:
+                        self.logger.debug(f"签名 [{fmt_id}] 行{row_idx}: identifiers 不匹配")
                         continue
+
+                    self.logger.debug(f"签名 [{fmt_id}] 行{row_idx}: identifiers 匹配成功! 找到: {identifiers}")
 
                     detected_cols = [c for c in cells if c.strip()]
                     if len(detected_cols) < min_cols:
+                        self.logger.debug(f"签名 [{fmt_id}] 行{row_idx}: 列数({len(detected_cols)}) < min_cols({min_cols})，跳过")
                         continue
 
                     data_start_offset = sig.get("data_start_offset", 1)
@@ -398,12 +414,14 @@ class FTData:
                         "delimiter": delimiter,
                     }
                     best_id_count = id_count
+                    self.logger.info(f"签名 [{fmt_id}] 匹配成功! encoding={enc}, header_row={row_idx}, id_count={id_count}")
                     break
 
         if best is None:
             raise FTParseError(
                 f"无法识别文件格式: {self._path}\n已尝试 encoding: {encodings}"
             )
+        self.logger.info(f"最优签名: {best['sig'].get('format_id')} (encoding={best['encoding']}, header_row={best['header_row']}, id_count={best_id_count})")
         return best
 
     # ══════════════════════════════════════════════════════════════
@@ -526,8 +544,6 @@ class FTData:
 
             self._df.iloc[data_idx, col_idx] = numeric
             # 即使 multiplier=1 也做了 float 转换
-            # 更新单位行为 SI 单位
-            self._units[col] = si_unit if si_unit else unit_str
 
     def _filter_rows(self):
         """过滤无效行。

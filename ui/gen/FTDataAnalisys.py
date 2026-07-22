@@ -42,7 +42,7 @@ FILE_FILTER = (
 
 
 class _FilePanel:
-    """封装一个文件选择面板（T0 或 TX）的逻辑"""
+    """封装一个文件选择面板（T0 或 TX）的逻辑 — 使用 QListWidget + 双击打开"""
 
     def __init__(self, label: str, scroll_area: QScrollArea,
                  scroll_content: QWidget, logger: logging.Logger,
@@ -52,7 +52,7 @@ class _FilePanel:
         self.scroll_content = scroll_content
         self.logger = logger
         self._set_status = status_callback
-        self._files: dict[str, QCheckBox] = {}  # name → checkbox
+        self._files: dict[str, str] = {}  # name → full_path
         self._init_layout()
 
     def _init_layout(self):
@@ -61,23 +61,80 @@ class _FilePanel:
         self._layout.setContentsMargins(4, 4, 4, 4)
         self._layout.setSpacing(2)
 
+    def _create_list_widget(self):
+        """创建/刷新 QListWidget"""
+        # 清理旧的 list widget
+        old_list = getattr(self, '_list_widget', None)
+        if old_list:
+            old_list.deleteLater()
+
+        from PySide6.QtWidgets import QListWidget, QListWidgetItem
+        lst = QListWidget()
+        lst.setSelectionMode(QListWidget.SelectionMode.ExtendedSelection)
+        lst.itemDoubleClicked.connect(self._on_double_click)
+
+        # 按名称排序添加
+        for name, full_path in sorted(self._files.items()):
+            item = QListWidgetItem(name)
+            item.setData(Qt.ItemDataRole.UserRole, full_path)
+            item.setToolTip(full_path)
+            # 默认勾选
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+            item.setCheckState(Qt.CheckState.Unchecked)
+            lst.addItem(item)
+
+        self._list_widget = lst
+        return lst
+
+    def _on_double_click(self, item):
+        """双击文件 → 用系统默认应用打开"""
+        full_path = item.data(Qt.ItemDataRole.UserRole)
+        if full_path and Path(full_path).exists():
+            self.logger.info(f"[{self.label}] 双击打开文件: {full_path}")
+            try:
+                from core.open_file import open_file
+                open_file(full_path)
+            except Exception as e:
+                self.logger.error(f"[{self.label}] 打开文件失败: {e}")
+        else:
+            self.logger.warning(f"[{self.label}] 文件不存在: {full_path}")
+
     def get_filenames(self) -> list[str]:
         """返回所有文件名列表（用于文件名分组解析）"""
         return list(self._files.keys())
 
     def get_first_checked_dir(self) -> str:
         """返回第一个勾选文件所在目录，无则返回空"""
-        for name, cb in self._files.items():
-            if cb.isChecked():
-                return str(Path(cb.toolTip()).parent)
+        lst = getattr(self, '_list_widget', None)
+        if lst:
+            for i in range(lst.count()):
+                item = lst.item(i)
+                if item.checkState() == Qt.CheckState.Checked:
+                    return str(Path(item.data(Qt.ItemDataRole.UserRole)).parent)
         return ""
 
     def get_first_file_dir(self) -> str:
         """返回第一个文件所在目录（不管勾选），无则返回空"""
         if self._files:
-            first = next(iter(self._files.values()))
-            return str(Path(first.toolTip()).parent)
+            first_path = next(iter(self._files.values()))
+            return str(Path(first_path).parent)
         return ""
+
+    def get_checked_paths(self) -> list[str]:
+        """返回所有勾选文件的完整路径"""
+        lst = getattr(self, '_list_widget', None)
+        if not lst:
+            return []
+        result = []
+        for i in range(lst.count()):
+            item = lst.item(i)
+            if item.checkState() == Qt.CheckState.Checked:
+                result.append(item.data(Qt.ItemDataRole.UserRole))
+        return result
+
+    def get_all_paths(self) -> list[str]:
+        """返回所有文件的完整路径列表"""
+        return list(self._files.values())
 
     def add_files(self):
         paths, selected_filter = QFileDialog.getOpenFileNames(
@@ -98,15 +155,23 @@ class _FilePanel:
             if name in self._files:
                 skipped += 1
                 continue
-            cb = QCheckBox(name)
-            cb.setToolTip(full_path)
-            cb.setChecked(False)
-            self._files[name] = cb
-            self._layout.addWidget(cb)
+            self._files[name] = full_path
             added += 1
             self.logger.info(f"[{self.label}] 添加文件: {full_path}")
 
         if added:
+            # 重建 QListWidget
+            old_list = getattr(self, '_list_widget', None)
+            if old_list:
+                old_list.deleteLater()
+            # 清除布局中的旧 widget
+            while self._layout.count():
+                item = self._layout.takeAt(0)
+                w = item.widget()
+                if w:
+                    w.deleteLater()
+            new_list = self._create_list_widget()
+            self._layout.addWidget(new_list)
             self._set_status(f"✅ {self.label}: 已添加 {added} 个文件")
             self.logger.info(f"[{self.label}] 本次添加 {added} 个文件，跳过 {skipped} 个重复")
         else:
@@ -114,20 +179,38 @@ class _FilePanel:
             self.logger.warning(f"[{self.label}] 所有 {skipped} 个文件均为重复项")
 
     def remove_selected(self):
-        checked = [cb for cb in self._files.values() if cb.isChecked()]
-        if not checked:
+        lst = getattr(self, '_list_widget', None)
+        if not lst:
+            QMessageBox.warning(self.scroll_content, "提示", "请先勾选要删除的文件")
+            return
+
+        checked_names = []
+        for i in range(lst.count()):
+            item = lst.item(i)
+            if item.checkState() == Qt.CheckState.Checked:
+                checked_names.append(item.text())
+
+        if not checked_names:
             QMessageBox.warning(self.scroll_content, "提示", "请先勾选要删除的文件")
             self._set_status(f"⚠ {self.label}: 未选中任何文件")
             self.logger.warning(f"[{self.label}] 删除操作取消：未选中文件")
             return
 
-        count = len(checked)
-        for cb in checked:
-            name = cb.text()
+        count = len(checked_names)
+        for name in checked_names:
             self.logger.info(f"[{self.label}] 删除文件: {name}")
             del self._files[name]
-            self._layout.removeWidget(cb)
-            cb.deleteLater()
+
+        # 重建 QListWidget
+        old_list = lst
+        old_list.deleteLater()
+        while self._layout.count():
+            item = self._layout.takeAt(0)
+            w = item.widget()
+            if w:
+                w.deleteLater()
+        new_list = self._create_list_widget()
+        self._layout.addWidget(new_list)
 
         self._set_status(f"🗑 {self.label}: 已删除 {count} 个文件")
         self.logger.info(f"[{self.label}] 批量删除 {count} 个文件，剩余 {len(self._files)} 个")
@@ -144,12 +227,44 @@ class _FilePanel:
 
         count = len(self._files)
         names = list(self._files.keys())
-        for name in names:
-            cb = self._files.pop(name)
-            self._layout.removeWidget(cb)
-            cb.deleteLater()
+        self._files.clear()
+
+        # 清理 QListWidget
+        old_list = getattr(self, '_list_widget', None)
+        if old_list:
+            old_list.deleteLater()
+        while self._layout.count():
+            item = self._layout.takeAt(0)
+            w = item.widget()
+            if w:
+                w.deleteLater()
+
         self._set_status(f"🧹 {self.label}: 已清空 {count} 个文件")
         self.logger.warning(f"[{self.label}] 清空全部 {count} 个文件: {names}")
+
+    def restore_files(self, paths: list[str]):
+        """从配置恢复文件列表 — 替代原有 QCheckBox 创建逻辑"""
+        added = 0
+        for full_path in paths:
+            name = Path(full_path).name
+            if name in self._files:
+                continue
+            self._files[name] = full_path
+            added += 1
+
+        if added:
+            # 重建 QListWidget
+            old_list = getattr(self, '_list_widget', None)
+            if old_list:
+                old_list.deleteLater()
+            while self._layout.count():
+                item = self._layout.takeAt(0)
+                w = item.widget()
+                if w:
+                    w.deleteLater()
+            new_list = self._create_list_widget()
+            self._layout.addWidget(new_list)
+            self.logger.info(f"[{self.label}] 从配置恢复 {added} 个文件")
 
 
 class FTDataAnalysisPage(QWidget, Ui_FTDataAnalysisWidget):
@@ -233,7 +348,7 @@ class FTDataAnalysisPage(QWidget, Ui_FTDataAnalysisWidget):
         """将文件列表保存到配置"""
         for panel_key, cfg_key in [("T0", "t0_file_list"), ("TX", "tx_file_list")]:
             panel = self._panels[panel_key]
-            paths = [cb.toolTip() for cb in panel._files.values()]
+            paths = list(panel._files.values())  # name → path dict, values are paths
             self._cm.set(cfg_key, paths)
         self._cm.save()  # 立即写入 TOML 文件
 
@@ -248,20 +363,7 @@ class FTDataAnalysisPage(QWidget, Ui_FTDataAnalysisWidget):
             for full_path in paths:
                 for msg in check_path_length(full_path):
                     self.logger.warning(f"[{panel_key}] {msg}")
-            added = 0
-            for full_path in paths:
-                name = Path(full_path).name
-                if name in panel._files:
-                    continue
-                from PySide6.QtWidgets import QCheckBox as QCB
-                cb = QCB(name)
-                cb.setToolTip(full_path)
-                cb.setChecked(False)
-                panel._files[name] = cb
-                panel._layout.addWidget(cb)
-                added += 1
-            if added:
-                self.logger.info(f"[{panel_key}] 从配置恢复 {added} 个文件")
+            panel.restore_files(paths)
 
     def _wrap_panel(self, panel_key: str, method_name: str):
         """包装 panel 方法使其在调用后自动保存文件列表"""
@@ -344,15 +446,15 @@ class FTDataAnalysisPage(QWidget, Ui_FTDataAnalysisWidget):
         """从 T0/TX 文件获取测试列名（自动格式检测 + 列映射）"""
         t0_cols, tx_cols = set(), set()
         cfg_path = Path(__file__).parent.parent.parent / "config" / "ft_data_config.toml"
-        for cb in self._panels["T0"]._files.values():
+        for full_path in self._panels["T0"].get_all_paths():
             try:
-                ft = FTData(cb.toolTip(), str(cfg_path))
+                ft = FTData(full_path, str(cfg_path))
                 t0_cols |= {c for c in ft.test_columns}
             except Exception:
                 pass
-        for cb in self._panels["TX"]._files.values():
+        for full_path in self._panels["TX"].get_all_paths():
             try:
-                ft = FTData(cb.toolTip(), str(cfg_path))
+                ft = FTData(full_path, str(cfg_path))
                 tx_cols |= {c for c in ft.test_columns}
             except Exception:
                 pass
@@ -467,8 +569,8 @@ class FTDataAnalysisPage(QWidget, Ui_FTDataAnalysisWidget):
     def _merge_files(self):
         """合并文件按钮 — 使用线程 + 进度条"""
         self.logger.info("开始合并文件")
-        t0_files = [cb.toolTip() for cb in self._panels["T0"]._files.values()]
-        tx_files = [cb.toolTip() for cb in self._panels["TX"]._files.values()]
+        t0_files = list(self._panels["T0"]._files.values())
+        tx_files = list(self._panels["TX"]._files.values())
 
         if not t0_files and not tx_files:
             QMessageBox.warning(self, "提示", "请先添加 T0 或 TX 文件")
@@ -718,8 +820,8 @@ class FTDataAnalysisPage(QWidget, Ui_FTDataAnalysisWidget):
         from core.compare import read_raw_headers_from_file
         raw_headers = {}
         for src in ([self._panels["T0"]._files.values()] if hasattr(self, '_panels') else []):
-            for cb in list(self._panels["T0"]._files.values())[:1]:
-                raw_headers = read_raw_headers_from_file(cb.toolTip())
+            for full_path in list(self._panels["T0"]._files.values())[:1]:
+                raw_headers = read_raw_headers_from_file(full_path)
                 break
             break
 

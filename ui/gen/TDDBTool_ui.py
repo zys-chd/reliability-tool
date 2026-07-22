@@ -190,7 +190,7 @@ class Ui_Form(object):
         self.scrollDataTable.setWidgetResizable(True)
         self.scrollDataTableContent = QWidget()
         self.scrollDataTableContent.setObjectName(u"scrollDataTableContent")
-        self.scrollDataTableContent.setGeometry(QRect(0, 0, 854, 696))
+        self.scrollDataTableContent.setGeometry(QRect(0, 0, 854, 693))
         self.verticalLayout_4 = QVBoxLayout(self.scrollDataTableContent)
         self.verticalLayout_4.setObjectName(u"verticalLayout_4")
         self.tblMonitorData = QTableWidget(self.scrollDataTableContent)
@@ -208,6 +208,11 @@ class Ui_Form(object):
         self.line.setFrameShape(QFrame.Shape.VLine)
 
         self.gridLayout_2.addWidget(self.line, 0, 3, 2, 1)
+
+        self.btnResetMonitorPreview = QPushButton(self.gbPreviewConfig)
+        self.btnResetMonitorPreview.setObjectName(u"btnResetMonitorPreview")
+
+        self.gridLayout_2.addWidget(self.btnResetMonitorPreview, 3, 4, 1, 1)
 
 
         self.verticalLayout.addWidget(self.gbPreviewConfig)
@@ -325,7 +330,7 @@ class Ui_Form(object):
         self.saFitResult.setWidgetResizable(True)
         self.saFitResultContent = QWidget()
         self.saFitResultContent.setObjectName(u"saFitResultContent")
-        self.saFitResultContent.setGeometry(QRect(0, 0, 66, 16))
+        self.saFitResultContent.setGeometry(QRect(0, 0, 80, 16))
         self.saFitResult.setWidget(self.saFitResultContent)
 
         self.fitResultInnerLayout.addWidget(self.saFitResult)
@@ -722,6 +727,7 @@ class Ui_Form(object):
         self.chkFailRateExceed.setText(QCoreApplication.translate("Form", u"\u76f8\u8f83\u524d\u4e00\u65f6\u523b\u500d\u7387\u8d85\u9650", None))
         self.chklogX.setText(QCoreApplication.translate("Form", u"X\u8f74\u4f7f\u7528\u5bf9\u6570\u5750\u6807\u7cfb", None))
         self.lblPreviewFile.setText(QCoreApplication.translate("Form", u"\u9884\u89c8\u6587\u4ef6\u9009\u62e9\uff1a", None))
+        self.btnResetMonitorPreview.setText(QCoreApplication.translate("Form", u"\u91cd\u7f6e\u76d1\u63a7\u9884\u89c8", None))
         self.gbMonitorPlot.setTitle(QCoreApplication.translate("Form", u"\u76d1\u63a7\u6570\u636e\u9884\u89c8", None))
         self.twMain.setTabText(self.twMain.indexOf(self.tbMonitorImport), QCoreApplication.translate("Form", u"\u76d1\u63a7\u6570\u636e\u63d0\u53d6", None))
         self.gbControl.setTitle(QCoreApplication.translate("Form", u"\u63a7\u5236", None))

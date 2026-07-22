@@ -162,6 +162,12 @@ def detect_tbd_points(
     t = channel.time
     c = channel.current  # 已经是 A
 
+    logger.info(f"检测TBD: channel={channel.name}, file={Path(channel.file_path).name}, "
+                f"data_points={len(t)}, drop={enable_drop}, rate={enable_rate}, limit={enable_limit}")
+
+    # 负漏电流取绝对值（负栅压下漏电流为负值）
+    c = np.abs(c)
+
     current_limit_a = current_limit_ua * 1e-6  # uA → A
 
     # ── 过滤起始零值和失效后连续零值 ──
@@ -170,6 +176,7 @@ def detect_tbd_points(
     while first_valid < len(c) and c[first_valid] <= current_drop_threshold * 2:
         first_valid += 1
     if first_valid > 0:
+        logger.debug(f"通道 {channel.name}: 跳过起始 {first_valid} 个零值点")
         t = t[first_valid:]
         c = c[first_valid:]
 
@@ -177,14 +184,18 @@ def detect_tbd_points(
     if len(c) > 3:
         keep = [True] * len(c)
         in_zero_run = False
+        zero_removed = 0
         for i in range(len(c)):
             if c[i] <= current_drop_threshold:
                 if in_zero_run:
                     keep[i] = False  # 连续零点中仅保留第一个
+                    zero_removed += 1
                 else:
                     in_zero_run = True  # 第一个零点保留
             else:
                 in_zero_run = False
+        if zero_removed > 0:
+            logger.debug(f"通道 {channel.name}: 去重 {zero_removed} 个连续零值点")
         t = t[keep]
         c = c[keep]
 
@@ -192,18 +203,23 @@ def detect_tbd_points(
     if len(c) > 3 and enable_limit:
         keep = [True] * len(c)
         in_limit_run = False
+        limit_removed = 0
         for i in range(len(c)):
             if c[i] > current_limit_a:
                 if in_limit_run:
                     keep[i] = False
+                    limit_removed += 1
                 else:
                     in_limit_run = True
             else:
                 in_limit_run = False
+        if limit_removed > 0:
+            logger.debug(f"通道 {channel.name}: 去重 {limit_removed} 个连续超限值点")
         t = t[keep]
         c = c[keep]
 
     if len(t) < 3:
+        logger.debug(f"通道 {channel.name}: 过滤后数据点不足3个，跳过")
         return []
 
     candidates: list[TBDCandidate] = []
@@ -212,6 +228,7 @@ def detect_tbd_points(
     if enable_drop:
         idx = _find_first_by_current_drop(t, c, current_drop_threshold)
         if idx is not None:
+            logger.info(f"通道 {channel.name}: 条件1(电流降为0)命中, t={t[idx]:.2f}s, c={c[idx]:.6e}A")
             candidates.append(TBDCandidate(
                 channel_name=channel.name,
                 tbd_time=t[idx],
@@ -220,11 +237,14 @@ def detect_tbd_points(
                 index_in_series=idx,
                 file_path=channel.file_path,
             ))
+        else:
+            logger.debug(f"通道 {channel.name}: 条件1(电流降为0)未命中")
 
     # 条件2：倍率超限
     if enable_rate:
         idx = _find_first_by_rate_exceed(t, c, rate_limit)
         if idx is not None:
+            logger.info(f"通道 {channel.name}: 条件2(倍率超限)命中, t={t[idx]:.2f}s, c={c[idx]:.6e}A")
             # 检查是否与已有候选同索引 → 合并原因
             existing = [ca for ca in candidates if ca.index_in_series == idx]
             if existing:
@@ -238,11 +258,14 @@ def detect_tbd_points(
                     index_in_series=idx,
                     file_path=channel.file_path,
                 ))
+        else:
+            logger.debug(f"通道 {channel.name}: 条件2(倍率超限)未命中")
 
     # 条件3：超过电流上限
     if enable_limit:
         idx = _find_first_by_current_limit(t, c, current_limit_a)
         if idx is not None:
+            logger.info(f"通道 {channel.name}: 条件3(超过电流上限)命中, t={t[idx]:.2f}s, c={c[idx]:.6e}A")
             existing = [ca for ca in candidates if ca.index_in_series == idx]
             if existing:
                 existing[0].failure_reason += "; 超过电流上限"
@@ -255,10 +278,13 @@ def detect_tbd_points(
                     index_in_series=idx,
                     file_path=channel.file_path,
                 ))
+        else:
+            logger.debug(f"通道 {channel.name}: 条件3(超过电流上限)未命中")
 
     # 候选点可能有多个不同索引 → 都是有效候选，保留
     candidates.sort(key=lambda x: x.tbd_time)
 
+    logger.info(f"通道 {channel.name}: TBD检测完成, 候选数={len(candidates)}")
     return candidates
 
 
@@ -352,6 +378,8 @@ def parse_monitor_file(
     """
     ext = Path(file_path).suffix.lower()
 
+    logger.info(f"解析监控文件: {file_path}, encoding_type={ext}, sheet_index={mapping.sheet_index}")
+
     # 读取数据 — 用 header=None 先全部读出，再手动指定列名
     try:
         if ext == ".csv":
@@ -368,6 +396,7 @@ def parse_monitor_file(
 
     # 用 header_row 行作为列名
     header_idx = mapping.header_row
+    logger.info(f"使用第 {header_idx} 行作为列名")
     if header_idx >= len(df_raw):
         raise ValueError(f"首行设置超出文件范围（共 {len(df_raw)} 行，首行索引 {header_idx}）")
 
@@ -383,6 +412,8 @@ def parse_monitor_file(
 
     # 时间列
     time_col = mapping.time_col
+    logger.info(f"可用列: {list(df.columns)}")
+    logger.info(f"请求时间列: '{time_col}'")
     if time_col not in df.columns:
         raise ValueError(f"时间列 '{time_col}' 在文件中未找到。可用列: {list(df.columns)}")
 
@@ -446,6 +477,7 @@ def parse_monitor_file(
             file_path=file_path,
         ))
 
+    logger.info(f"解析完成: {len(channels)} 个通道, 电压={voltage}V, 温度={temperature}℃")
     return channels, voltage, temperature
 
 

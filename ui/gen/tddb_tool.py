@@ -1315,10 +1315,11 @@ class TDDBPage(QWidget, Ui_Form):
 
             # 寿命表：不同失效率下的寿命
             fr_levels = [0.632, 0.5, 0.001, 0.0001, 1e-5, 1e-6]
+            fr_labels = ["t@0.632/年", "t@0.5/年", "t@1e-3/年", "t@100ppm/年", "t@10ppm/年", "t@1ppm/年"]
             life_row = {"group": grp}
-            for fr in fr_levels:
+            for fr, label in zip(fr_levels, fr_labels):
                 t_life = pred_eta * (-np.log(1 - fr)) ** (1.0 / beta_val)
-                life_row[f"t@{fr}"] = t_life
+                life_row[label] = t_life
             life_results.append(life_row)
             # 缓存 η/β 用于曲线绘制（不在表格中显示）
             self._last_curve_data[grp] = {"eta": pred_eta, "beta": beta_val}
@@ -2122,6 +2123,9 @@ class TDDBPage(QWidget, Ui_Form):
         self.chklogX.stateChanged.connect(self._on_monitor_log_changed)
         self.chklogY.stateChanged.connect(self._on_monitor_log_changed)
 
+        # 重置监控预览
+        self.btnResetMonitorPreview.clicked.connect(self._on_monitor_reset_preview)
+
     # ── 文件管理 ────────────────────────────────────────────────
 
     def _on_monitor_add_file(self):
@@ -2402,7 +2406,7 @@ class TDDBPage(QWidget, Ui_Form):
             self._monitor_progress.setVisible(False)
 
     def _populate_monitor_table(self):
-        """填充监控数据预览表格 — 多TBD行用combobox。"""
+        """填充监控数据预览表格 — 多TBD行用combobox，每行有预览按钮。"""
         table = self.tblMonitorData
         rows = self._monitor_tbd_display_rows
 
@@ -2411,20 +2415,27 @@ class TDDBPage(QWidget, Ui_Form):
             table.setColumnCount(0)
             return
 
-        # 标准模板列（不含 确认）
-        columns = ["文件", "通道", "TBD时间(秒)", "TBD电流(A)",
-                   "失效原因", "电压(V)", "温度(℃)", "备注"]
-        table.setColumnCount(len(columns))
-        table.setHorizontalHeaderLabels(columns)
+        # 标准模板列 第0列是预览按钮
+        data_columns = ["文件", "通道", "TBD时间(秒)", "TBD电流(A)",
+                        "失效原因", "电压(V)", "温度(℃)", "QBD(C)", "备注"]
+        all_columns = ["预览"] + data_columns
+        table.setColumnCount(len(all_columns))
+        table.setHorizontalHeaderLabels(all_columns)
         table.setRowCount(len(rows))
 
         for r, row in enumerate(rows):
             candidates = row.get("_candidates", [])
             has_multiple = len(candidates) >= 2
 
-            # 填充各列
-            for key_col in columns:
-                col = columns.index(key_col)
+            # 第0列：预览按钮
+            btn_preview = QPushButton("预览")
+            btn_preview.setToolTip("预览此通道曲线")
+            btn_preview.clicked.connect(lambda checked, rr=r: self._on_preview_single_channel(rr))
+            table.setCellWidget(r, 0, btn_preview)
+
+            # 填充各数据列（偏移+1）
+            for key_col in data_columns:
+                col = data_columns.index(key_col) + 1  # +1 because column 0 is preview button
                 val = row.get(key_col, "")
 
                 if key_col == "TBD时间(秒)":
@@ -2463,7 +2474,20 @@ class TDDBPage(QWidget, Ui_Form):
                     item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable)
                 table.setItem(r, col, item)
 
-            # Yellow background for multi-TBD rows (already done above for cells without combobox)
+            # QBD(C) 列计算（列偏移+1）
+            qbd_col = data_columns.index("QBD(C)") + 1
+            tbd_time_val = row.get("TBD时间(秒)", 0)
+            if tbd_time_val and isinstance(tbd_time_val, (int, float)) and tbd_time_val > 0:
+                fp = row.get("文件路径", "")
+                ch_name = row.get("通道", "")
+                channels_list = self._monitor_channels.get(fp, [])
+                channel = next((ch for ch in channels_list if ch.name == ch_name), None)
+                if channel:
+                    qbd_val = calculate_qbd(channel, float(tbd_time_val))
+                    qbd_item = QTableWidgetItem(f"{qbd_val:.6e}")
+                    qbd_item.setFlags(qbd_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                    table.setItem(r, qbd_col, qbd_item)
+            # Yellow background for multi-TBD rows 
             if has_multiple:
                 for c in range(table.columnCount()):
                     it = table.item(r, c)
@@ -2476,6 +2500,23 @@ class TDDBPage(QWidget, Ui_Form):
         # 保存通道数据到行
         for r, row in enumerate(rows):
             row["_table_row"] = r
+
+    def _on_preview_single_channel(self, row: int):
+        """预览单条通道曲线（预览按钮触发）"""
+        if row < 0 or row >= len(self._monitor_tbd_display_rows):
+            return
+        row_data = self._monitor_tbd_display_rows[row]
+        file_path = row_data.get("文件路径", "")
+        channel_name = row_data.get("通道", "")
+
+        # 查找通道数据
+        channels = self._monitor_channels.get(file_path, [])
+        for ch in channels:
+            if ch.name == channel_name:
+                self._plot_monitor_channel(ch, row_data)
+                return
+
+        QMessageBox.warning(self, "提示", f"通道 {channel_name} 数据未找到")
 
     def _on_monitor_row_check_changed(self, row: int, checked: bool):
         """表格 checkbox 变化 → 显示/隐藏对应通道的曲线。"""
@@ -2623,6 +2664,14 @@ class TDDBPage(QWidget, Ui_Form):
             if fp:
                 self._plot_all_channels(fp)
 
+    def _on_monitor_reset_preview(self):
+        """重置监控预览到全通道显示。"""
+        idx = self.cmbPreviewFile.currentIndex()
+        if idx >= 0:
+            fp = self.cmbPreviewFile.currentData()
+            if fp:
+                self._plot_all_channels(fp)
+
     # ── 绘图：全部通道一次绘制 ──────────────────────────
 
     def _plot_all_channels(self, file_path: str):
@@ -2717,15 +2766,15 @@ class TDDBPage(QWidget, Ui_Form):
             if r < len(self._monitor_tbd_display_rows):
                 row = dict(self._monitor_tbd_display_rows[r])
                 # 读取备注
-                note_item = table.item(r, 7)  # 备注在列7
+                note_item = table.item(r, 9)  # 备注在列9（0是预览按钮）
                 if note_item:
                     row["备注"] = note_item.text()
                 # 读取TBD时间 — 从单元格文本或combobox当前文本
-                tbd_widget = table.cellWidget(r, 2)  # TBD时间(秒)在列2
+                tbd_widget = table.cellWidget(r, 3)  # TBD时间(秒)在列3
                 if tbd_widget and isinstance(tbd_widget, QComboBox):
                     tbd_text = tbd_widget.currentText()
                 else:
-                    tbd_item = table.item(r, 2)
+                    tbd_item = table.item(r, 3)
                     tbd_text = tbd_item.text() if tbd_item else ""
                 row["TBD时间(秒)"] = tbd_text
                 updated_rows.append(row)
@@ -2843,11 +2892,11 @@ class TDDBPage(QWidget, Ui_Form):
             if r >= table.rowCount():
                 continue
             # Read TBD time from cell/combobox
-            tbd_widget = table.cellWidget(r, 2)
+            tbd_widget = table.cellWidget(r, 3)
             if tbd_widget and isinstance(tbd_widget, QComboBox):
                 tbd_text = tbd_widget.currentText()
             else:
-                tbd_item = table.item(r, 2)
+                tbd_item = table.item(r, 3)
                 tbd_text = tbd_item.text() if tbd_item else ""
             tbd = 0.0
             try:
