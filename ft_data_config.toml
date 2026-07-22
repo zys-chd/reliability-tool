@@ -1,0 +1,45 @@
+
+[[signatures]]
+format_id = "STS8200_FT_REV"
+display_name = "STS8200 FT反向格式（meta头在后）"
+header_identifiers = ["SITE_NUM", "SOFT_BIN"]
+part_id_offset = 0
+data_col_header_offset = -4
+unit_offset = -3
+lower_limit_offset = -2
+higher_limit_offset = -1
+data_start_offset = 1
+pre_test_columns = ["TEST_NUM"]
+stop_at_blank_row = true
+skip_blank_rows = true
+delimiter = ","
+encoding = "utf-8-sig"
+skip_row_values = {PART_ID = ["1", "END"]}
+column_map = {SN = "PART_ID"}
+
+[[signatures]]
+format_id = "DEFAULT_FT_FILE"
+display_name = "默认FT文件"
+header_identifiers = ["PART_ID", "SOFT_BIN"]
+part_id_offset = 0
+data_col_header_offset = 0
+unit_offset = 1
+lower_limit_offset = 2
+higher_limit_offset = 3
+data_start_offset = 4
+pre_test_columns = ["SOFT_BIN"]
+stop_at_blank_row = true
+skip_blank_rows = true
+delimiter = ","
+encoding = "utf-8-sig"
+skip_row_values = {PART_ID = ["1", "END"]}
+column_map = {MODULE_ID = "PART_ID", BIN = "SOFT_BIN"}
+
+[meta_columns]
+PART_ID = "PART_ID"
+SOFT_BIN = "SOFT_BIN"
+file = "file"
+Product = "Product"
+SubProduct = "SubProduct"
+TestTime = "TestTime"
+TestingTime = "TestingTime"

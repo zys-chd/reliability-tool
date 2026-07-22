@@ -62,13 +62,19 @@ def fit_e_model(
     gamma = -coeffs[0]  # slope = -gamma
     a = np.exp(coeffs[1])
 
-    # R²
-    fitted = np.polyval(coeffs, eox)
-    ss_res = np.sum((ln_eta - fitted) ** 2)
-    ss_tot = np.sum((ln_eta - np.mean(ln_eta)) ** 2)
-    r2 = 1 - ss_res / ss_tot if ss_tot > 0 else 0.0
+    # R²_log (ln η 尺度)
+    fitted_ln = np.polyval(coeffs, eox)
+    ss_res_ln = np.sum((ln_eta - fitted_ln) ** 2)
+    ss_tot_ln = np.sum((ln_eta - np.mean(ln_eta)) ** 2)
+    r2_log = 1 - ss_res_ln / ss_tot_ln if ss_tot_ln > 0 else 0.0
+    # R²_raw (η 原始尺度)
+    fitted_eta = np.exp(fitted_ln)
+    ss_res_raw = np.sum((e - fitted_eta) ** 2)
+    ss_tot_raw = np.sum((e - np.mean(e)) ** 2)
+    r2_raw = 1 - ss_res_raw / ss_tot_raw if ss_tot_raw > 0 else 0.0
 
-    return {"gamma": float(gamma), "a": float(a), "r2": float(r2)}
+    return {"gamma": float(gamma), "a": float(a), "r2": float(r2_log),
+            "r2_raw": float(r2_raw), "r2_log": float(r2_log)}
 
 
 def fit_1e_model(
@@ -98,12 +104,17 @@ def fit_1e_model(
     g = coeffs[0]
     tau_0 = np.exp(coeffs[1])
 
-    fitted = np.polyval(coeffs, inv_eox)
-    ss_res = np.sum((ln_eta - fitted) ** 2)
-    ss_tot = np.sum((ln_eta - np.mean(ln_eta)) ** 2)
-    r2 = 1 - ss_res / ss_tot if ss_tot > 0 else 0.0
+    fitted_ln = np.polyval(coeffs, inv_eox)
+    ss_res_ln = np.sum((ln_eta - fitted_ln) ** 2)
+    ss_tot_ln = np.sum((ln_eta - np.mean(ln_eta)) ** 2)
+    r2_log = 1 - ss_res_ln / ss_tot_ln if ss_tot_ln > 0 else 0.0
+    fitted_eta = np.exp(fitted_ln)
+    ss_res_raw = np.sum((e - fitted_eta) ** 2)
+    ss_tot_raw = np.sum((e - np.mean(e)) ** 2)
+    r2_raw = 1 - ss_res_raw / ss_tot_raw if ss_tot_raw > 0 else 0.0
 
-    return {"g": float(g), "tau_0": float(tau_0), "r2": float(r2)}
+    return {"g": float(g), "tau_0": float(tau_0), "r2": float(r2_log),
+            "r2_raw": float(r2_raw), "r2_log": float(r2_log)}
 
 
 def fit_v_model(voltages: np.ndarray, etas: np.ndarray) -> dict:
@@ -127,12 +138,17 @@ def fit_v_model(voltages: np.ndarray, etas: np.ndarray) -> dict:
     beta_v = -coeffs[0]
     a = np.exp(coeffs[1])
 
-    fitted = np.polyval(coeffs, v)
-    ss_res = np.sum((ln_eta - fitted) ** 2)
-    ss_tot = np.sum((ln_eta - np.mean(ln_eta)) ** 2)
-    r2 = 1 - ss_res / ss_tot if ss_tot > 0 else 0.0
+    fitted_ln = np.polyval(coeffs, v)
+    ss_res_ln = np.sum((ln_eta - fitted_ln) ** 2)
+    ss_tot_ln = np.sum((ln_eta - np.mean(ln_eta)) ** 2)
+    r2_log = 1 - ss_res_ln / ss_tot_ln if ss_tot_ln > 0 else 0.0
+    fitted_eta = np.exp(fitted_ln)
+    ss_res_raw = np.sum((e - fitted_eta) ** 2)
+    ss_tot_raw = np.sum((e - np.mean(e)) ** 2)
+    r2_raw = 1 - ss_res_raw / ss_tot_raw if ss_tot_raw > 0 else 0.0
 
-    return {"beta_v": float(beta_v), "a": float(a), "r2": float(r2)}
+    return {"beta_v": float(beta_v), "a": float(a), "r2": float(r2_log),
+            "r2_raw": float(r2_raw), "r2_log": float(r2_log)}
 
 
 def fit_sqrt_e_model(
@@ -165,12 +181,17 @@ def fit_sqrt_e_model(
     s = -coeffs[0]  # slope = -S
     a = np.exp(coeffs[1])
 
-    fitted = np.polyval(coeffs, sqrt_eox)
-    ss_res = np.sum((ln_eta - fitted) ** 2)
-    ss_tot = np.sum((ln_eta - np.mean(ln_eta)) ** 2)
-    r2 = 1 - ss_res / ss_tot if ss_tot > 0 else 0.0
+    fitted_ln = np.polyval(coeffs, sqrt_eox)
+    ss_res_ln = np.sum((ln_eta - fitted_ln) ** 2)
+    ss_tot_ln = np.sum((ln_eta - np.mean(ln_eta)) ** 2)
+    r2_log = 1 - ss_res_ln / ss_tot_ln if ss_tot_ln > 0 else 0.0
+    fitted_eta = np.exp(fitted_ln)
+    ss_res_raw = np.sum((e - fitted_eta) ** 2)
+    ss_tot_raw = np.sum((e - np.mean(e)) ** 2)
+    r2_raw = 1 - ss_res_raw / ss_tot_raw if ss_tot_raw > 0 else 0.0
 
-    return {"s": float(s), "a": float(a), "r2": float(r2)}
+    return {"s": float(s), "a": float(a), "r2": float(r2_log),
+            "r2_raw": float(r2_raw), "r2_log": float(r2_log)}
 
 
 def fit_e_arrhenius(
@@ -225,17 +246,24 @@ def fit_e_arrhenius(
     ln_a, gamma, ea = coeffs[0], -coeffs[1], coeffs[2]
     a = np.exp(ln_a)
 
-    # R²
-    fitted = A_mat @ coeffs
-    ss_res = np.sum((ln_eta - fitted) ** 2)
-    ss_tot = np.sum((ln_eta - np.mean(ln_eta)) ** 2)
-    r2 = 1 - ss_res / ss_tot if ss_tot > 0 else 0.0
+    # R²_log (ln η 尺度)
+    fitted_ln = A_mat @ coeffs
+    ss_res_ln = np.sum((ln_eta - fitted_ln) ** 2)
+    ss_tot_ln = np.sum((ln_eta - np.mean(ln_eta)) ** 2)
+    r2_log = 1 - ss_res_ln / ss_tot_ln if ss_tot_ln > 0 else 0.0
+    # R²_raw (η 原始尺度)
+    fitted_eta = np.exp(fitted_ln)
+    ss_res_raw = np.sum((e - fitted_eta) ** 2)
+    ss_tot_raw = np.sum((e - np.mean(e)) ** 2)
+    r2_raw = 1 - ss_res_raw / ss_tot_raw if ss_tot_raw > 0 else 0.0
 
     return {
         "gamma": float(gamma),
         "ea": float(ea),
         "a": float(a),
-        "r2": float(r2),
+        "r2": float(r2_log),
+        "r2_raw": float(r2_raw),
+        "r2_log": float(r2_log),
     }
 
 

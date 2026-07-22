@@ -9,10 +9,12 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from PySide6.QtGui import QColor
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtWidgets import (
-    QDialog, QFileDialog, QGroupBox, QHBoxLayout,
-    QLabel, QLineEdit, QMessageBox, QPushButton, QTableWidgetItem,
+    QCheckBox, QComboBox, QDialog, QFileDialog, QGroupBox, QHBoxLayout,
+    QInputDialog, QLabel, QLineEdit, QListWidget, QListWidgetItem,
+    QMessageBox, QPushButton, QTableWidgetItem,
     QVBoxLayout, QWidget, QHeaderView,
 )
 from PySide6.QtWebEngineCore import QWebEngineSettings
@@ -20,6 +22,12 @@ from PySide6.QtWebEngineCore import QWebEngineSettings
 from .TDDBTool_ui import Ui_Form
 from .TDDBSetting_ui import Ui_Form as Ui_Settings
 from .logger import create_logger, TabLoggerAdapter
+from .monitor_import_dialog import MonitorImportDialog
+from core.tddb.monitor_import import (
+    ColumnMapping, MonitoredChannel, TBDCandidate, QBDResult,
+    generate_dummy_monitor_data, parse_monitor_file, detect_tbd_points,
+    calculate_qbd, process_all_files,
+)
 from .config_manager import ConfigManager
 from .config_schemas import TDDB_SCHEMA
 from core.tddb.weibull_fitter import fit_weibull, fit_unified_slope, weibull_plot_data
@@ -184,6 +192,7 @@ class TDDBPage(QWidget, Ui_Form):
         self._last_curve_data: dict = {}  # {grp: {eta, beta}}
         self._last_model_params: dict = {}  # {grp: {gamma, g, beta_v, ea}}
         self._last_etas: dict = {}  # {key: 实际 η（平滑或 Weibull）}
+        self._last_model_r2: dict = {}  # {grp: {r2_raw, r2_log}}
         self._fitting_in_progress = False  # reentrant guard
         self._initialized = False  # 初始化完成后设为 True
 
@@ -194,6 +203,7 @@ class TDDBPage(QWidget, Ui_Form):
 
         self._connect_signals()
         self._init_settings_tab()
+        self._init_monitor_tab()
 
         self._initialized = True
 
@@ -1224,7 +1234,9 @@ class TDDBPage(QWidget, Ui_Form):
                 # 用选定模型外推（将温度效应剥离后拟合电压模型）
                 if model == "E模型":
                     model_result = {"gamma": gamma_fit, "a": a_const, "ea": ea,
-                                    "r2": ea_result["r2"]}
+                                    "r2": ea_result["r2"],
+                                    "r2_raw": ea_result.get("r2_raw", ea_result["r2"]),
+                                    "r2_log": ea_result.get("r2_log", ea_result["r2"])}
                 elif model == "1/E模型":
                     # 1/E 模型拟合（温度修正后）
                     t_k = np.where(t_arr < 100, t_arr + 273.15, t_arr)
@@ -1234,7 +1246,9 @@ class TDDBPage(QWidget, Ui_Form):
                     eta_corrected = eta_arr * np.exp(-ea * (inv_t - 1.0/(8.617333262e-5 * t_op_k)))
                     m = fit_1e_model(v_arr, eta_corrected, tox)
                     model_result = {"g": m["g"], "tau_0": m["tau_0"],
-                                    "ea": ea, "r2": m["r2"]}
+                                    "ea": ea, "r2": m["r2"],
+                                    "r2_raw": m.get("r2_raw", m["r2"]),
+                                    "r2_log": m.get("r2_log", m["r2"])}
                 elif model == "√E模型":
                     t_k = np.where(t_arr < 100, t_arr + 273.15, t_arr)
                     inv_t = 1.0 / (8.617333262e-5 * t_k)
@@ -1242,7 +1256,9 @@ class TDDBPage(QWidget, Ui_Form):
                     eta_corrected = eta_arr * np.exp(-ea * (inv_t - 1.0/(8.617333262e-5 * t_op_k)))
                     m = fit_sqrt_e_model(v_arr, eta_corrected, tox)
                     model_result = {"s": m["s"], "a": m["a"],
-                                    "ea": ea, "r2": m["r2"]}
+                                    "ea": ea, "r2": m["r2"],
+                                    "r2_raw": m.get("r2_raw", m["r2"]),
+                                    "r2_log": m.get("r2_log", m["r2"])}
                 else:
                     # V 模型
                     t_k = np.where(t_arr < 100, t_arr + 273.15, t_arr)
@@ -1251,7 +1267,9 @@ class TDDBPage(QWidget, Ui_Form):
                     eta_corrected = eta_arr * np.exp(-ea * (inv_t - 1.0/(8.617333262e-5 * t_op_k)))
                     m = fit_v_model(v_arr, eta_corrected)
                     model_result = {"beta_v": m["beta_v"], "a": m["a"],
-                                    "ea": ea, "r2": m["r2"]}
+                                    "ea": ea, "r2": m["r2"],
+                                    "r2_raw": m.get("r2_raw", m["r2"]),
+                                    "r2_log": m.get("r2_log", m["r2"])}
             else:
                 # 单温度：用选定电压模型直接拟合
                 if model == "E模型":
@@ -1262,6 +1280,12 @@ class TDDBPage(QWidget, Ui_Form):
                     model_result = fit_sqrt_e_model(v_arr, eta_arr, tox)
                 else:
                     model_result = fit_v_model(v_arr, eta_arr)
+
+            # 缓存每组的模型 R²
+            self._last_model_r2[grp] = {
+                "r2_raw": model_result.get("r2_raw", model_result.get("r2", 0)),
+                "r2_log": model_result.get("r2_log", model_result.get("r2", 0)),
+            }
 
             # 预测工作电压下寿命
             if has_multiple_temps:
@@ -1460,8 +1484,13 @@ class TDDBPage(QWidget, Ui_Form):
 
             β = result.get("beta", None)
             η = self._last_etas.get(key, result.get("eta", None))
+            # Weibull 拟合 R²（每条件）
             r2_raw = result.get("r2_raw", None)
             r2_log = result.get("r2_log", None)
+            # 模型拟合 R²（每组的全局值）
+            grp_r2 = self._last_model_r2.get(grp, {})
+            model_r2_raw = grp_r2.get("r2_raw", None)
+            model_r2_log = grp_r2.get("r2_log", None)
 
             # 从缓存读取 η_op 和 η_assess（已在 _on_calc 中按组正确计算）
             curve = self._last_curve_data.get(grp, {})
@@ -1487,6 +1516,8 @@ class TDDBPage(QWidget, Ui_Form):
                 "η_QBD(s)": "",  # QBD 填充在下面的另一个循环
                 "R²_raw": r2_raw if r2_raw is not None else "",
                 "R²_log": r2_log if r2_log is not None else "",
+                "模型R²_raw": model_r2_raw if model_r2_raw is not None else "",
+                "模型R²_log": model_r2_log if model_r2_log is not None else "",
             }
             # 模型参数
             for label, key_name in param_keys.items():
@@ -1590,10 +1621,13 @@ class TDDBPage(QWidget, Ui_Form):
         for grp, gd in groups_data.items():
             v_arr = np.array(gd["v"])
             eta_arr = np.array(gd["eta"])
+            grp_r2 = self._last_model_r2.get(grp, {})
+            r2_raw = grp_r2.get("r2_raw", 0)
+            r2_log = grp_r2.get("r2_log", 0)
             fig.add_trace(go.Scatter(
                 x=v_arr, y=eta_arr,
                 mode="markers",
-                name=f"{grp} (data)",
+                name=f"{grp} (data) R²_raw={r2_raw:.4f} R²_log={r2_log:.4f}",
                 marker=dict(size=10),
             ))
 
@@ -2020,3 +2054,846 @@ class TDDBPage(QWidget, Ui_Form):
             height=500, width=900,
         )
         _render_html_in_view(self.wvWeibullPlot, fig, self.save_dir, "TDDB-custom-weibull")
+
+
+# ══════════════════════════════════════════════════════════════════
+# 监控数据提取 Tab (tbMonitorImport)
+# ══════════════════════════════════════════════════════════════════
+
+    # ── 状态 ────────────────────────────────────────────────────
+
+    _monitor_file_paths: list[str] = []
+    _monitor_configs: dict[str, ColumnMapping] = {}
+    _monitor_channels: dict[str, list[MonitoredChannel]] = {}  # file_path -> channels
+    _monitor_tbd_candidates: dict[str, list[TBDCandidate]] = {}  # channel_key -> candidates
+    _monitor_tbd_display_rows: list[dict] = []  # 当前显示的行
+    _monitor_filtered_rows: list[dict] = []  # 预览文件过滤后的行
+    _monitor_qbd_results: list[QBDResult] = []
+
+    def _init_monitor_tab(self):
+        """初始化监控数据提取 tab。"""
+        # 添加进度条到 tab — 放在右侧 groupBox 顶部
+        from PySide6.QtWidgets import QProgressBar
+        self._monitor_progress = QProgressBar()
+        self._monitor_progress.setMaximum(100)
+        self._monitor_progress.setValue(0)
+        self._monitor_progress.setVisible(False)
+        # 插入到 gbMonitorPlot 顶部
+        plot_layout = self.gbMonitorPlot.layout()
+        if plot_layout:
+            plot_layout.insertWidget(0, self._monitor_progress)
+
+        self._monitor_failure_config = {
+            "enable_drop": True,
+            "enable_rate": True,
+            "enable_limit": True,
+            "enable_half_exclude": True,
+            "current_limit_ua": 1.0,
+            "rate_limit": 10.0,
+        }
+
+        self._connect_monitor_signals()
+
+    def _connect_monitor_signals(self):
+        """连接监控 tab 的信号。"""
+        # 文件操作
+        self.btnAddFile.clicked.connect(self._on_monitor_add_file)
+        self.btnRemoveSelected.clicked.connect(self._on_monitor_remove_selected)
+        self.btnRemoveAll.clicked.connect(self._on_monitor_remove_all)
+
+        # 失效条件变化
+        self.chkFailCurrentDrop.stateChanged.connect(self._on_monitor_fail_cfg_changed)
+        self.chkFailRateExceed.stateChanged.connect(self._on_monitor_fail_cfg_changed)
+        self.chkFailCurrentLimit.stateChanged.connect(self._on_monitor_fail_cfg_changed)
+        self.chkFailHalfTime.stateChanged.connect(self._on_monitor_fail_cfg_changed)
+        self.spnCurrentLimit.valueChanged.connect(self._on_monitor_fail_cfg_changed)
+        self.spnRateLimit.valueChanged.connect(self._on_monitor_fail_cfg_changed)
+        self.spnCurrentLimit.editingFinished.connect(self._on_monitor_current_limit_changed)
+
+        # 预览文件选择
+        self.cmbPreviewFile.currentIndexChanged.connect(
+            self._on_monitor_preview_file_changed)
+
+        # 导出 / Weibull
+        self.btnExportData.clicked.connect(self._on_monitor_export_data)
+        self.btnToWeibullFit.clicked.connect(self._on_monitor_to_weibull_fit)
+
+        # 对数坐标切换
+        self.chklogX.stateChanged.connect(self._on_monitor_log_changed)
+        self.chklogY.stateChanged.connect(self._on_monitor_log_changed)
+
+    # ── 文件管理 ────────────────────────────────────────────────
+
+    def _on_monitor_add_file(self):
+        """添加文件 → 打开文件对话框 → 打开列映射对话框。"""
+        from PySide6.QtWidgets import QFileDialog
+        paths, _ = QFileDialog.getOpenFileNames(
+            self, "选择 TDDB 监控数据文件", "",
+            "Excel/CSV 文件 (*.xlsx *.xls *.csv);;所有文件 (*)")
+        if not paths:
+            return
+
+        # 去重
+        existing = set(self._monitor_file_paths)
+        new_paths = [p for p in paths if p not in existing]
+
+        if not new_paths:
+            QMessageBox.information(self, "提示", "所选文件已在列表中")
+            return
+
+        self.logger.info(f"添加 {len(new_paths)} 个监控数据文件")
+
+        # 打开列映射对话框
+        dlg = MonitorImportDialog(new_paths, self, self.logger)
+        if dlg.exec() != QDialog.DialogCode.Accepted:
+            # 用户取消 — 不添加任何文件
+            return
+
+        configs = dlg.get_configs()
+        if not configs:
+            QMessageBox.information(self, "提示", "没有已配置的文件，请先应用配置")
+            return
+
+        # 添加文件
+        for fp in new_paths:
+            if fp in configs:
+                self._monitor_file_paths.append(fp)
+                self._monitor_configs[fp] = configs[fp]
+
+        # 刷新文件列表
+        self._refresh_monitor_file_list()
+        # 自动处理所有已配置文件
+        self._monitor_process_all()
+
+    def _on_monitor_remove_selected(self):
+        """删除选中的文件。"""
+        # 从文件列表滚动区域获取选中项
+        selected = self._get_monitor_selected_files()
+        if not selected:
+            QMessageBox.information(self, "提示", "请在文件列表中选择要删除的文件")
+            return
+
+        for fp in selected:
+            if fp in self._monitor_file_paths:
+                self._monitor_file_paths.remove(fp)
+            self._monitor_configs.pop(fp, None)
+            self._monitor_channels.pop(fp, None)
+
+        self.logger.info(f"删除 {len(selected)} 个文件")
+        self._refresh_monitor_file_list()
+
+    def _on_monitor_remove_all(self):
+        """删除所有文件。"""
+        if not self._monitor_file_paths:
+            return
+        reply = QMessageBox.question(
+            self, "确认", f"确定要删除所有 {len(self._monitor_file_paths)} 个文件吗？",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        self._monitor_file_paths.clear()
+        self._monitor_configs.clear()
+        self._monitor_channels.clear()
+        self._monitor_tbd_candidates.clear()
+        self._monitor_tbd_display_rows.clear()
+        self._monitor_qbd_results.clear()
+        self.logger.info("已清空所有监控文件")
+        self._refresh_monitor_file_list()
+
+    def _get_monitor_selected_files(self) -> list[str]:
+        """从 QListWidget 获取选中的文件路径。"""
+        lst = getattr(self, '_monitor_file_list_widget', None)
+        if lst is None:
+            return []
+        return [item.data(Qt.ItemDataRole.UserRole)
+                for item in lst.selectedItems()]
+
+    def _refresh_monitor_file_list(self):
+        """刷新文件列表区域 — 使用 QListWidget。"""
+        scroll_content = self.scrollFileListContent
+
+        # 先把旧的 QListWidget 删除
+        old_list = getattr(self, '_monitor_file_list_widget', None)
+        if old_list:
+            old_list.deleteLater()
+
+        # 清除 scroll 内容
+        layout = scroll_content.layout()
+        if layout is None:
+            layout = QVBoxLayout(scroll_content)
+            layout.setContentsMargins(2, 2, 2, 2)
+            layout.setSpacing(2)
+        else:
+            while layout.count():
+                item = layout.takeAt(0)
+                w = item.widget()
+                if w:
+                    w.deleteLater()
+
+        self._monitor_file_list_widget = QListWidget()
+        self._monitor_file_list_widget.setSelectionMode(
+            QListWidget.SelectionMode.ExtendedSelection)
+        from PySide6.QtGui import QColor
+        for fp in self._monitor_file_paths:
+            name = Path(fp).name
+            item = QListWidgetItem(name)
+            item.setData(Qt.ItemDataRole.UserRole, fp)
+            item.setToolTip(fp)
+            # 已配置的文件绿色标记
+            if fp in self._monitor_configs:
+                item.setText(f"✓ {name}")
+                item.setForeground(QColor("#2e7d32"))
+            self._monitor_file_list_widget.addItem(item)
+
+        layout.addWidget(self._monitor_file_list_widget)
+        layout.addStretch()
+
+        # 刷新预览文件选择器
+        self._refresh_preview_file_combo()
+
+    def _refresh_preview_file_combo(self):
+        """刷新预览文件选择下拉框。"""
+        self.cmbPreviewFile.clear()
+        for fp in self._monitor_file_paths:
+            self.cmbPreviewFile.addItem(Path(fp).name, fp)
+        if self._monitor_file_paths:
+            self.cmbPreviewFile.setCurrentIndex(0)
+
+    def _on_monitor_reconfigure(self, file_path: str):
+        """双击文件重新打开配置对话框。"""
+        dlg = MonitorImportDialog([file_path], self, self.logger)
+        # 预填已有配置
+        if file_path in self._monitor_configs:
+            # 对话框会从 _configs 加载
+            pass
+
+        if dlg.exec() == QDialog.DialogCode.Accepted:
+            configs = dlg.get_configs()
+            if configs:
+                self._monitor_configs.update(configs)
+                self._monitor_process_all()
+
+    # ── 失效配置同步 ────────────────────────────────────────────
+
+    def _on_monitor_fail_cfg_changed(self):
+        """失效判断条件变化时重新分析。"""
+        self._monitor_failure_config = {
+            "enable_drop": self.chkFailCurrentDrop.isChecked(),
+            "enable_rate": self.chkFailRateExceed.isChecked(),
+            "enable_limit": self.chkFailCurrentLimit.isChecked(),
+            "enable_half_exclude": self.chkFailHalfTime.isChecked(),
+            "current_limit_ua": self.spnCurrentLimit.value(),
+            "rate_limit": self.spnRateLimit.value(),
+        }
+        if self._monitor_file_paths:
+            self._monitor_process_all()
+
+    def _on_monitor_current_limit_changed(self):
+        self._on_monitor_fail_cfg_changed()
+        # Also replot if a file is selected
+        idx = self.cmbPreviewFile.currentIndex()
+        if idx >= 0:
+            fp = self.cmbPreviewFile.currentData()
+            if fp:
+                self._plot_all_channels(fp)
+
+    # ── 批量处理 ────────────────────────────────────────────────
+
+    def _monitor_process_all(self):
+        """批量处理所有已配置的监控文件。"""
+        if not self._monitor_configs:
+            return
+
+        cfg = self._monitor_failure_config
+
+        self._monitor_progress.setVisible(True)
+        self._monitor_progress.setValue(0)
+        self.logger.info("开始处理监控数据...")
+
+        try:
+            from PySide6.QtCore import QCoreApplication
+
+            total = len(self._monitor_configs)
+            all_tbd_rows: list[dict] = []
+
+            for i, (fp, mapping) in enumerate(self._monitor_configs.items()):
+                QCoreApplication.processEvents()
+                try:
+                    channels, voltage, temp = parse_monitor_file(fp, mapping)
+                    self._monitor_channels[fp] = channels
+
+                    for ch in channels:
+                        candidates = detect_tbd_points(
+                            ch,
+                            enable_drop=cfg["enable_drop"],
+                            enable_rate=cfg["enable_rate"],
+                            enable_limit=cfg["enable_limit"],
+                            current_limit_ua=cfg["current_limit_ua"],
+                            rate_limit=cfg["rate_limit"],
+                        )
+
+                        ch_key = f"{Path(fp).name}|{ch.name}"
+                        self._monitor_tbd_candidates[ch_key] = candidates
+
+                        # One row per channel always
+                        if candidates:
+                            primary = candidates[0]
+                            row = {
+                                "文件": ch_key,
+                                "文件路径": fp,
+                                "通道": ch.name,
+                                "TBD时间(秒)": round(primary.tbd_time, 2),
+                                "TBD电流(A)": f"{primary.tbd_current:.6e}",
+                                "失效原因": primary.failure_reason,
+                                "电压(V)": ch.voltage,
+                                "温度(℃)": ch.temperature if ch.temperature is not None else "",
+                                "备注": "",
+                                "_candidates": candidates,
+                            }
+                        else:
+                            row = {
+                                "文件": ch_key,
+                                "文件路径": fp,
+                                "通道": ch.name,
+                                "TBD时间(秒)": "",
+                                "TBD电流(A)": "",
+                                "失效原因": "未检测到失效",
+                                "电压(V)": ch.voltage,
+                                "温度(℃)": ch.temperature if ch.temperature is not None else "",
+                                "备注": "",
+                                "_candidates": [],
+                            }
+                        all_tbd_rows.append(row)
+
+                except Exception as e:
+                    self.logger.error(f"处理 {fp} 失败: {e}")
+
+                self._monitor_progress.setValue(int((i + 1) / total * 100))
+
+            self._monitor_tbd_display_rows = all_tbd_rows
+
+            if not all_tbd_rows:
+                self.logger.warning("未检测到任何失效点，请检查失效判断条件和数据")
+                QMessageBox.warning(
+                    self, "未检测到失效点",
+                    "根据当前失效判断条件，未找到任何 TBD 候选点。\n\n"
+                    "请检查：\n"
+                    "1. 电流上限是否设置过低\n"
+                    "2. 倍率上限是否设置过高\n"
+                    "3. 数据中是否包含失效通道\n\n"
+                    "您可以调整参数后重新分析。"
+                )
+                self.tblMonitorData.setRowCount(0)
+                self.tblMonitorData.setColumnCount(0)
+                self._monitor_progress.setVisible(False)
+                return
+
+            # 填充表格
+            self._populate_monitor_table()
+
+            self.logger.info(f"处理完成，共 {len(all_tbd_rows)} 条 TBD 候选记录")
+            self._monitor_progress.setValue(100)
+
+        except Exception as e:
+            self.logger.error(f"批量处理失败: {e}")
+            QMessageBox.critical(self, "处理失败", str(e))
+        finally:
+            self._monitor_progress.setVisible(False)
+
+    def _populate_monitor_table(self):
+        """填充监控数据预览表格 — 多TBD行用combobox。"""
+        table = self.tblMonitorData
+        rows = self._monitor_tbd_display_rows
+
+        if not rows:
+            table.setRowCount(0)
+            table.setColumnCount(0)
+            return
+
+        # 标准模板列（不含 确认）
+        columns = ["文件", "通道", "TBD时间(秒)", "TBD电流(A)",
+                   "失效原因", "电压(V)", "温度(℃)", "备注"]
+        table.setColumnCount(len(columns))
+        table.setHorizontalHeaderLabels(columns)
+        table.setRowCount(len(rows))
+
+        for r, row in enumerate(rows):
+            candidates = row.get("_candidates", [])
+            has_multiple = len(candidates) >= 2
+
+            # 填充各列
+            for key_col in columns:
+                col = columns.index(key_col)
+                val = row.get(key_col, "")
+
+                if key_col == "TBD时间(秒)":
+                    if has_multiple:
+                        # 多TBD → 用combobox
+                        combo = QComboBox()
+                        for ci, c in enumerate(candidates):
+                            combo.addItem(f"{c.tbd_time:.4e}", ci)
+                        combo.addItem("自定义...", -1)
+                        combo.currentIndexChanged.connect(
+                            lambda idx, r=r, cb=combo: self._on_multi_tbd_selected(r, cb))
+                        has_val = row.get("TBD时间(秒)")
+                        if has_val and isinstance(has_val, (int, float)) and has_val > 0:
+                            combo.setCurrentText(f"{has_val:.4e}")
+                        table.setCellWidget(r, col, combo)
+                        # 黄色背景
+                        for c in range(table.columnCount()):
+                            it = table.item(r, c)
+                            if it:
+                                it.setBackground(QColor("#FFF3E0"))
+                        continue  # skip the QTableWidgetItem for this column
+                    elif len(candidates) == 1:
+                        # 单TBD → 科学记数法
+                        val = f"{row.get('TBD时间(秒)', 0):.4e}"
+                    else:
+                        # 无TBD → 空白
+                        val = ""
+                elif key_col == "TBD电流(A)":
+                    val = str(val)
+
+                item = QTableWidgetItem(str(val))
+                if key_col in ("TBD电流(A)", "电压(V)", "温度(℃)"):
+                    item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                # TBD时间(秒) is editable for single/no candidate
+                if key_col == "TBD时间(秒)" and not has_multiple:
+                    item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable)
+                table.setItem(r, col, item)
+
+            # Yellow background for multi-TBD rows (already done above for cells without combobox)
+            if has_multiple:
+                for c in range(table.columnCount()):
+                    it = table.item(r, c)
+                    if it:
+                        it.setBackground(QColor("#FFF3E0"))
+
+        table.resizeColumnsToContents()
+        table.horizontalHeader().setStretchLastSection(True)
+
+        # 保存通道数据到行
+        for r, row in enumerate(rows):
+            row["_table_row"] = r
+
+    def _on_monitor_row_check_changed(self, row: int, checked: bool):
+        """表格 checkbox 变化 → 显示/隐藏对应通道的曲线。"""
+        if row < 0 or row >= len(self._monitor_tbd_display_rows):
+            return
+        row_data = self._monitor_tbd_display_rows[row]
+        file_path = row_data.get("文件路径", "")
+        channel_name = row_data.get("通道", "")
+
+        if not checked:
+            self.wvMonitorPlot.setHtml("")
+            return
+
+        # 查找通道数据
+        channels = self._monitor_channels.get(file_path, [])
+        for ch in channels:
+            if ch.name == channel_name:
+                self._plot_monitor_channel(ch, row_data)
+                return
+
+        QMessageBox.warning(self, "提示", f"通道 {channel_name} 数据未找到")
+
+    def _plot_monitor_channel(self, channel: MonitoredChannel, row_data: dict):
+        """在右侧 QWebEngineView 绘制单个通道的监控曲线。"""
+        import plotly.graph_objects as go
+        from datetime import datetime
+
+        fig = go.Figure()
+
+        # 电流曲线
+        fig.add_trace(go.Scatter(
+            x=channel.time,
+            y=channel.current * 1e6,  # A → uA
+            mode="lines",
+            name=f"{channel.name} 电流",
+            line=dict(color="#1f77b4", width=2),
+        ))
+
+        # 标记 TBD 点
+        tbd_time = row_data.get("TBD时间(秒)", 0)
+        tbd_current_str = row_data.get("TBD电流(A)", "0")
+        try:
+            tbd_current_a = float(tbd_current_str)
+        except ValueError:
+            tbd_current_a = 0.0
+        if tbd_time > 0:
+            fig.add_trace(go.Scatter(
+                x=[tbd_time],
+                y=[tbd_current_a * 1e6],
+                mode="markers",
+                name=f"TBD: {tbd_time:.1f}s",
+                marker=dict(size=12, color="red", symbol="x"),
+            ))
+
+        # 阈值线
+        cfg = self._monitor_failure_config
+        if cfg["enable_limit"]:
+            fig.add_hline(
+                y=cfg["current_limit_ua"],
+                line_dash="dash",
+                line_color="red",
+                opacity=0.5,
+                annotation_text=f"电流上限 {cfg['current_limit_ua']}uA",
+            )
+
+        fig.update_layout(
+            title=f"{channel.name} — {Path(channel.file_path).name}",
+            xaxis_title="时间 (s)",
+            yaxis_title="电流 (uA)",
+            template="plotly_white",
+            hovermode="x unified",
+            height=500,
+            margin=dict(l=40, r=20, t=40, b=40),
+        )
+
+        self._render_monitor_html(fig)
+
+    def _render_monitor_html(self, fig):
+        """将 plotly 图渲染到监控预览区域。"""
+        _set_webengine_settings(self.wvMonitorPlot)
+        import tempfile
+        from datetime import datetime
+        temp_dir = tempfile.gettempdir()
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        html_path = os.path.join(temp_dir, f"monitor-{ts}.html")
+        fig.write_html(html_path)
+        self.wvMonitorPlot.load(QUrl.fromLocalFile(html_path))
+
+    # ── 预览文件切换 ────────────────────────────────────────────
+
+    def _on_multi_tbd_selected(self, row: int, combo: QComboBox):
+        """多TBD行用户选择具体TBD时间或自定义。"""
+        if row < 0 or row >= len(self._monitor_tbd_display_rows):
+            return
+        data = combo.currentData()
+        row_data = self._monitor_tbd_display_rows[row]
+        cands = row_data.get("_candidates", [])
+        if data == -1:
+            # 自定义输入
+            from PySide6.QtWidgets import QInputDialog
+            val, ok = QInputDialog.getDouble(
+                self, "自定义TBD时间", "输入TBD时间（秒）:", 0, 0, 1e9, 4)
+            if ok:
+                row_data["TBD时间(秒)"] = val
+                row_data["确认"] = "是"
+                combo.setItemText(combo.currentIndex(), f"{val:.4e}")
+        elif data is not None and data < len(cands):
+            # 选择已有的候选TBD
+            c = cands[data]
+            row_data["TBD时间(秒)"] = round(c.tbd_time, 2)
+            row_data["TBD电流(A)"] = f"{c.tbd_current:.6e}"
+            row_data["失效原因"] = c.failure_reason
+            row_data["确认"] = "是"
+
+    # ── 绘图：全部通道一次绘制 ──────────────────────────
+
+    def _on_monitor_preview_file_changed(self):
+        """预览文件选择变化时绘图并过滤表格。"""
+        idx = self.cmbPreviewFile.currentIndex()
+        if idx < 0 or not self._monitor_tbd_display_rows:
+            return
+        fp = self.cmbPreviewFile.currentData()
+        if not fp:
+            return
+
+        self.logger.info(f"切换预览文件: {Path(fp).name}")
+
+        # 绘制该文件所有通道
+        self._plot_all_channels(fp)
+
+        # 过滤表格显示该文件的行
+        filtered = [r for r in self._monitor_tbd_display_rows
+                    if r.get("文件路径") == fp]
+        self._monitor_filtered_rows = filtered or []
+        old = self._monitor_tbd_display_rows
+        self._monitor_tbd_display_rows = self._monitor_filtered_rows
+        self._populate_monitor_table()
+        self._monitor_tbd_display_rows = old
+
+    def _on_monitor_log_changed(self):
+        """对数坐标切换时重新绘图。"""
+        idx = self.cmbPreviewFile.currentIndex()
+        if idx >= 0:
+            fp = self.cmbPreviewFile.currentData()
+            if fp:
+                self._plot_all_channels(fp)
+
+    # ── 绘图：全部通道一次绘制 ──────────────────────────
+
+    def _plot_all_channels(self, file_path: str):
+        """在右侧 QWebEngineView 绘制选定文件所有通道的监控曲线。"""
+        import plotly.graph_objects as go
+        from datetime import datetime
+
+        channels = self._monitor_channels.get(file_path, [])
+        if not channels:
+            self.wvMonitorPlot.setHtml("")
+            return
+
+        fig = go.Figure()
+        palette = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+                   "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf",
+                   "#aec7e8", "#ffbb78", "#98df8a", "#ff9896", "#c5b0d5",
+                   "#c49c94", "#f7b6d2", "#c7c7c7"]
+
+        for i, ch in enumerate(channels):
+            color = palette[i % len(palette)]
+            fig.add_trace(go.Scatter(
+                x=ch.time,
+                y=ch.current * 1e6,  # A → uA
+                mode="lines",
+                name=ch.name,
+                line=dict(color=color, width=1.5),
+                visible=True,
+            ))
+
+        # 阈值线
+        cfg = self._monitor_failure_config
+        if cfg["enable_limit"] and cfg["current_limit_ua"] > 0:
+            fig.add_hline(
+                y=cfg["current_limit_ua"],
+                line_dash="dash", line_color="red", opacity=0.5,
+                annotation_text=f"电流上限 {cfg['current_limit_ua']}uA",
+            )
+
+        # 坐标轴设定
+        xaxis = dict(
+            title="时间 (s)",
+            tickformat=".2e",  # 科学记数法
+            type="log" if self.chklogX.isChecked() else "linear",
+            exponentformat="power",
+        )
+        yaxis = dict(
+            title="电流 (uA)",
+            tickformat=".2e",  # 科学记数法
+            type="log" if self.chklogY.isChecked() else "linear",
+            exponentformat="power",
+            # 对数坐标时从正数开始
+            rangemode="tozero" if not self.chklogY.isChecked() else "normal",
+        )
+
+        fig.update_layout(
+            title=f"监控电流曲线 — {Path(file_path).name}",
+            xaxis=xaxis,
+            yaxis=yaxis,
+            template="plotly_white",
+            hovermode="x unified",
+            legend=dict(
+                x=1.02, y=1, xanchor="left", yanchor="top",
+                bgcolor="rgba(255,255,255,0.8)",
+                itemsizing="constant",
+                itemclick="toggle",
+                itemdoubleclick="toggleothers",
+            ),
+            margin=dict(l=40, r=120, t=40, b=40),
+            height=600,
+        )
+
+        # 通道多于 10 条时默认只显示前 10
+        if len(channels) > 10:
+            for i, trace in enumerate(fig.data):
+                if i >= 10:
+                    trace.visible = "legendonly"
+
+        self._render_monitor_html(fig)
+
+    # ── 导出数据 ────────────────────────────────────────────────
+
+    def _on_monitor_export_data(self):
+        """导出 TBD/QBD 数据到 Excel — 直接从单元格/combobox读取显示值。"""
+        if not self._monitor_tbd_display_rows:
+            QMessageBox.warning(self, "提示", "没有数据可导出")
+            return
+
+        # 收集用户编辑的备注和当前显示值
+        updated_rows = []
+        table = self.tblMonitorData
+        for r in range(table.rowCount()):
+            if r < len(self._monitor_tbd_display_rows):
+                row = dict(self._monitor_tbd_display_rows[r])
+                # 读取备注
+                note_item = table.item(r, 7)  # 备注在列7
+                if note_item:
+                    row["备注"] = note_item.text()
+                # 读取TBD时间 — 从单元格文本或combobox当前文本
+                tbd_widget = table.cellWidget(r, 2)  # TBD时间(秒)在列2
+                if tbd_widget and isinstance(tbd_widget, QComboBox):
+                    tbd_text = tbd_widget.currentText()
+                else:
+                    tbd_item = table.item(r, 2)
+                    tbd_text = tbd_item.text() if tbd_item else ""
+                row["TBD时间(秒)"] = tbd_text
+                updated_rows.append(row)
+
+        self._monitor_tbd_display_rows = updated_rows
+
+        # 选择保存路径
+        from PySide6.QtWidgets import QFileDialog
+        from datetime import datetime
+        default_name = f"TDDB监控分析结果_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        save_path, _ = QFileDialog.getSaveFileName(
+            self, "保存监控分析结果", default_name,
+            "Excel 文件 (*.xlsx)")
+        if not save_path:
+            return
+
+        try:
+            self._monitor_progress.setVisible(True)
+            self._monitor_progress.setValue(0)
+
+            # 计算 QBD
+            import pandas as pd
+            records = []
+            total = len(updated_rows)
+
+            for i, row in enumerate(updated_rows):
+                fp = row.get("文件路径", "")
+                ch_name = row.get("通道", "")
+                channels = self._monitor_channels.get(fp, [])
+                channel = next((ch for ch in channels if ch.name == ch_name), None)
+
+                tbd_str = row.get("TBD时间(秒)", "")
+                tbd_time = 0.0
+                try:
+                    tbd_time = float(tbd_str)
+                except (ValueError, TypeError):
+                    pass
+
+                if channel and tbd_time > 0:
+                    qbd = calculate_qbd(channel, tbd_time)
+                    qbd_str = f"{qbd:.6e}"
+                else:
+                    qbd_str = ""
+
+                records.append({
+                    "文件": Path(row.get("文件路径", "")).name,
+                    "通道": row.get("通道", ""),
+                    "TBD时间(秒)": tbd_time if tbd_time > 0 else "",
+                    "TBD电流(A)": row.get("TBD电流(A)", ""),
+                    "QBD(C)": qbd_str,
+                    "电压(V)": row.get("电压(V)", ""),
+                    "温度(℃)": row.get("温度(℃)", ""),
+                    "失效原因": row.get("失效原因", ""),
+                    "备注": row.get("备注", ""),
+                })
+                self._monitor_progress.setValue(int((i + 1) / total * 90))
+
+            df = pd.DataFrame(records)
+            df.to_excel(save_path, index=False)
+            self._monitor_progress.setValue(100)
+            self._monitor_data_saved = True
+
+            self.logger.info(f"已导出 {len(records)} 条记录到 {save_path}")
+            QMessageBox.information(self, "导出成功",
+                f"已导出 {len(records)} 条记录\n{save_path}")
+
+        except Exception as e:
+            self.logger.error(f"导出失败: {e}")
+            QMessageBox.critical(self, "导出失败", str(e))
+        finally:
+            self._monitor_progress.setVisible(False)
+
+    # ── 前往 Weibull ────────────────────────────────────────────
+
+    def _on_monitor_to_weibull_fit(self):
+        """使用当前数据前往 Weibull 拟合 — 直接从单元格/combobox读取显示值。"""
+        if not self._monitor_tbd_display_rows:
+            QMessageBox.warning(self, "提示", "没有数据，请先导入监控数据")
+            return
+
+        saved = getattr(self, '_monitor_data_saved', False)
+        if not saved:
+            reply = QMessageBox.question(
+                self, "未保存",
+                "数据尚未保存，是否先导出？",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Cancel,
+            )
+            if reply == QMessageBox.StandardButton.Yes:
+                self._on_monitor_export_data()
+                saved = getattr(self, '_monitor_data_saved', False)
+                if not saved:
+                    return
+            elif reply == QMessageBox.StandardButton.Cancel:
+                return
+
+        # Choose TBD or QBD - use explicit buttons
+        msg = QMessageBox(self)
+        msg.setWindowTitle("选择数据类型")
+        msg.setText("使用哪种数据进行 Weibull 拟合？")
+        btn_tbd = msg.addButton("TBD（时间）", QMessageBox.ButtonRole.YesRole)
+        btn_qbd = msg.addButton("QBD（电荷）", QMessageBox.ButtonRole.NoRole)
+        btn_cancel = msg.addButton("取消", QMessageBox.ButtonRole.RejectRole)
+        msg.setDefaultButton(btn_tbd)
+        msg.exec()
+        clicked = msg.clickedButton()
+        if clicked == btn_cancel:
+            return
+        use_tbd = (clicked == btn_tbd)
+
+        # Collect data — read TBD time from cell/combobox directly
+        import pandas as pd
+        table = self.tblMonitorData
+        records = []
+        for r, row in enumerate(self._monitor_tbd_display_rows):
+            if r >= table.rowCount():
+                continue
+            # Read TBD time from cell/combobox
+            tbd_widget = table.cellWidget(r, 2)
+            if tbd_widget and isinstance(tbd_widget, QComboBox):
+                tbd_text = tbd_widget.currentText()
+            else:
+                tbd_item = table.item(r, 2)
+                tbd_text = tbd_item.text() if tbd_item else ""
+            tbd = 0.0
+            try:
+                tbd = float(tbd_text)
+            except (ValueError, TypeError):
+                pass
+
+            # Calculate QBD from the row data
+            fp = row.get("文件路径", "")
+            ch_name = row.get("通道", "")
+            channels = self._monitor_channels.get(fp, [])
+            channel = next((ch for ch in channels if ch.name == ch_name), None)
+            qbd = 0.0
+            if channel and tbd > 0:
+                qbd = calculate_qbd(channel, tbd)
+
+            if tbd > 0:
+                records.append({
+                    "PART_ID": row.get("通道", ""),
+                    "TBD": tbd,
+                    "QBD": qbd,
+                    "Vgs": row.get("电压(V)", ""),
+                    "Temperature": row.get("温度(℃)", ""),
+                    "group": Path(row.get("文件路径", "")).stem,
+                    "comment": row.get("备注", ""),
+                })
+
+        if not records:
+            QMessageBox.warning(self, "提示", "没有有效的 TBD 数据，请在表格中输入 TBD 时间")
+            return
+
+        df = pd.DataFrame(records)
+
+        # 设置到 TDDBPage 的数据
+        self._data = df
+        self._data_version += 1
+        if use_tbd:
+            self.rdoTBD.setChecked(True)
+            self._current_data_type = "TBD"
+        else:
+            self.rdoQBD.setChecked(True)
+            self._current_data_type = "QBD"
+
+        self._fit_results = {}
+
+        # 切换到 Weibull tab
+        self.twMain.setCurrentWidget(self.tbWeibull)
+        self._populate_raw_data_tab()
+        self.logger.info(f"已导入 {len(records)} 条监控数据到 Weibull 拟合")

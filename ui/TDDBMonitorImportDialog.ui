@@ -1,0 +1,389 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>dlgMonitorImport</class>
+ <widget class="QDialog" name="dlgMonitorImport">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1196</width>
+    <height>958</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Dialog</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QFrame" name="frameContent">
+     <property name="frameShape">
+      <enum>QFrame::Shape::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Shadow::Raised</enum>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="6" column="5">
+       <widget class="QLineEdit" name="editCurrentKeyword">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLabel" name="lblSheet">
+        <property name="text">
+         <string>选择Sheet：</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="4">
+       <widget class="QLabel" name="lblCurrentUnit">
+        <property name="text">
+         <string>监控电流单位：</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QLabel" name="lblSampleTime">
+        <property name="text">
+         <string>采样时间列：</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2">
+       <widget class="QComboBox" name="cmbSampleTime"/>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLabel" name="lblHeaderRow">
+        <property name="text">
+         <string>选择首行：</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="10" column="1" colspan="8">
+       <widget class="QGroupBox" name="gbChannelPreview">
+        <property name="title">
+         <string>监控通道预览</string>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_2">
+         <item>
+          <widget class="QScrollArea" name="scrollChannelPreview">
+           <property name="widgetResizable">
+            <bool>true</bool>
+           </property>
+           <widget class="QWidget" name="scrollChannelPreviewContent">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>0</y>
+              <width>799</width>
+              <height>527</height>
+             </rect>
+            </property>
+           </widget>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushButtonApply">
+           <property name="text">
+            <string>应用</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item row="3" column="4">
+       <widget class="QLabel" name="lblAgingTime">
+        <property name="text">
+         <string>老化时间列：</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0" rowspan="11">
+       <widget class="QScrollArea" name="scrollFileList">
+        <property name="widgetResizable">
+         <bool>true</bool>
+        </property>
+        <widget class="QWidget" name="scrollFileListContent">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>0</y>
+           <width>325</width>
+           <height>882</height>
+          </rect>
+         </property>
+        </widget>
+       </widget>
+      </item>
+      <item row="6" column="1">
+       <widget class="QRadioButton" name="rdoVoltageFromCol">
+        <property name="text">
+         <string>施加电压列</string>
+        </property>
+        <property name="checked">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="1" colspan="8">
+       <widget class="Line" name="lineSep2">
+        <property name="frameShadow">
+         <enum>QFrame::Shadow::Plain</enum>
+        </property>
+        <property name="lineWidth">
+         <number>1</number>
+        </property>
+        <property name="midLineWidth">
+         <number>1</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Orientation::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="1">
+       <widget class="QRadioButton" name="rdoVoltageFixed">
+        <property name="text">
+         <string>施加电压</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="3" rowspan="2">
+       <widget class="Line" name="lineSep3">
+        <property name="frameShadow">
+         <enum>QFrame::Shadow::Plain</enum>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Orientation::Vertical</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="2">
+       <widget class="QRadioButton" name="rdoSampleTimeFromCol">
+        <property name="text">
+         <string>采样时间列</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="5">
+       <widget class="QComboBox" name="cmbAgingTimeUnit">
+        <item>
+         <property name="text">
+          <string>秒</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>分</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>小时</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>天</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>周</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>月</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>年</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="1" column="2" colspan="7">
+       <widget class="QComboBox" name="cmbHeaderRow"/>
+      </item>
+      <item row="3" column="5">
+       <widget class="QComboBox" name="cmbAgingTime"/>
+      </item>
+      <item row="6" column="4">
+       <widget class="QLabel" name="lblCurrentKeyword">
+        <property name="text">
+         <string>监控电流关键字：</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2" colspan="7">
+       <widget class="QComboBox" name="cmbSheet"/>
+      </item>
+      <item row="6" column="2">
+       <widget class="QComboBox" name="cmbVoltageCol"/>
+      </item>
+      <item row="2" column="1">
+       <widget class="QLabel" name="lblTimeSection">
+        <property name="text">
+         <string>以下项目二选一：</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="4">
+       <widget class="QLabel" name="lblAgingTimeUnit">
+        <property name="text">
+         <string>老化时间单位：</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="2">
+       <widget class="QLineEdit" name="editVoltageFixed">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="4">
+       <widget class="QRadioButton" name="rdoAgingTimeFromCol">
+        <property name="text">
+         <string>老化时间列</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="8">
+       <widget class="QComboBox" name="cmbTempCol"/>
+      </item>
+      <item row="7" column="5">
+       <widget class="QComboBox" name="cmbCurrentUnit">
+        <item>
+         <property name="text">
+          <string>nA</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>pA</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>uA</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>mA</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>A</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="6" column="6">
+       <widget class="QRadioButton" name="rdoTempCol">
+        <property name="text">
+         <string>监控温度列：</string>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="6">
+       <widget class="QLabel" name="lblTempUnit">
+        <property name="text">
+         <string>监控温度单位：</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="8">
+       <widget class="QComboBox" name="cmbTempUnit">
+        <item>
+         <property name="text">
+          <string>℃</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>K</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>F</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="7" column="8">
+       <widget class="QLineEdit" name="editTempFixed">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="6">
+       <widget class="QRadioButton" name="rdoTempFixed">
+        <property name="text">
+         <string>考核温度</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Orientation::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::StandardButton::Cancel|QDialogButtonBox::StandardButton::Ok</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

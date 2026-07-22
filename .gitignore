@@ -49,9 +49,12 @@ packaging/__pycache__/
 # Test data
 data/*.xlsx
 data/*.csv
+data/archive/
+data/TDDB/
 
 # Generated UI (regenerate from .ui files)
-ui/gen/*_ui.py
+# ui/gen/*_ui.py
 presentation/
+df/
 
 .pytest_cache/
